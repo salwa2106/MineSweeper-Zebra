@@ -6,5 +6,8 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="C:/Users/nasal/Downloads/junit-jupiter-api-5.10.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/nasal/Downloads/junit-jupiter-engine.source_5.10.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/nasal/Downloads/junit-platform-console-standalone-1.10.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
