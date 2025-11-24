@@ -18,7 +18,7 @@ public class GameController {
         players[1] = new Player(p2Name);
 
         boards[0] = new Board(difficulty);
-        boards[1] = new Board(difficulty);
+        boards[2] = new Board(difficulty);
 
         scoreManager = new ScoreManager(difficulty);
     }
