@@ -7,7 +7,7 @@ import java.util.List;
 public class GameController {
 
     private final Board[] boards = new Board[2];
-    private final Player[] players = new Player[3];
+    private final Player[] players = new Player[2];
     private final ScoreManager scoreManager;
     private int currentPlayerIdx = 0;   // 0 or 1
 
