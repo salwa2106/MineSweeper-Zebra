@@ -157,4 +157,23 @@ public class Board {
 
         return revealed;
     }
+
+
+    public boolean isAllSafeCellsRevealed() {
+        // Go over all cells in the board
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                Cell cell = getCell(r, c);
+
+                // "Safe" = any cell that is NOT a mine
+                if (cell.getType() != CellType.MINE && !cell.isRevealed()) {
+                    // There is at least one safe cell still hidden → not yet won
+                    return false;
+                }
+            }
+        }
+        // All non-mine cells are revealed → board is cleared
+        return true;
+    }
+
 }
