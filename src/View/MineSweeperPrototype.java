@@ -354,6 +354,7 @@ public class MineSweeperPrototype extends JFrame {
 
         return b;
     }
+    
 
 
     /* ------------------------------ NEW GAME SCREEN ------------------------------ */
