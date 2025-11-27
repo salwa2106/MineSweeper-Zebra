@@ -8,6 +8,7 @@ import java.awt.*;
  * add child components on top (your card layout root).
  */
 public class BackgroundPanel extends JPanel {
+	
 
     private Image background;
 

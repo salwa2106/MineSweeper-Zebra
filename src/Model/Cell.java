@@ -7,8 +7,11 @@ public abstract class Cell {
     protected final CellType type;
 
     private boolean revealed = false;
-    private boolean flagged = false;
+    private boolean flagged  = false;
     private int adjacentMines = 0; // used for NUMBER cells
+
+    // 🔹 NEW: used for Question / Surprise cells
+    private boolean specialUsed = false;
 
     protected Cell(int row, int col, CellType type) {
         this.row = row;
@@ -32,5 +35,14 @@ public abstract class Cell {
     /** Package-private: used only by Board when calculating numbers. */
     void setAdjacentMines(int count) {
         this.adjacentMines = count;
+    }
+
+    // 🔹 NEW: used for 2-step Question / Surprise activation
+    public boolean isSpecialUsed() {
+        return specialUsed;
+    }
+
+    public void setSpecialUsed(boolean specialUsed) {
+        this.specialUsed = specialUsed;
     }
 }

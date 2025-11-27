@@ -1,9 +1,9 @@
 package Model;
 
 public enum Difficulty {
-    EASY(9, 9, 10, 6, 2, 6, 10, 5),
+    EASY(9, 9, 10, 6, 2, 10, 10, 5),
     MEDIUM(13, 13, 26, 10, 3, 8, 10, 3),
-    HARD(16, 16, 44, 14, 4, 10, 10, 2);
+    HARD(16, 16, 44, 14, 4, 6, 10, 2);
 
     public final int rows;
     public final int cols;
@@ -14,6 +14,7 @@ public enum Difficulty {
     public final int maxLives;
     public final int questionOrSurpriseCost;
 
+    
     Difficulty(int rows, int cols,
                int mines, int questionCells, int surpriseCells,
                int startLives, int maxLives, int questionOrSurpriseCost) {

@@ -19,6 +19,8 @@ import java.util.List;
  */
 public class MineSweeperPrototype extends JFrame {
 
+	
+	
     /* ------------------------------ FOREST ASSETS ------------------------------ */
     private static final String A_BG          = "src/assets/forest/forest_bg_1920x1080.png";
     private static final String A_GRASS       = "src/assets/forest/tile_grass.png";
@@ -30,6 +32,9 @@ public class MineSweeperPrototype extends JFrame {
     private static final String A_HEART_FULL  = "src/assets/forest/heart_full.png";
     private static final String A_HEART_EMPTY = "src/assets/forest/heart_empty.png";
     private static final String A_BROWN       = "src/assets/forest/tile_brown.png";
+    private static final String A_QUESTION = "src/assets/forest/question.png";
+    private static final Color GRID_LINE = new Color(212,175,55,140);
+
 
     private static final int TILE_SIZE = 44;
 
@@ -41,6 +46,8 @@ public class MineSweeperPrototype extends JFrame {
 
     // Boards for each player (0 = P1, 1 = P2)
     private final Board[] boards = new Board[2];
+ // Fireworks overlay (for win animation)
+    private FireworksPanel fireworks;
 
     private ImageIcon loadIconFit(String path, int w, int h) {
         Image img = new ImageIcon(path).getImage();
@@ -197,6 +204,31 @@ public class MineSweeperPrototype extends JFrame {
     private Component space(int w) {
         return Box.createRigidArea(new Dimension(w, 0));
     }
+    
+    private JComponent wrapWithFade(JComponent comp) {
+        FadeInLayerUI ui = new FadeInLayerUI();
+        JLayer<JComponent> layer = new JLayer<>(comp, ui);
+        ui.startFade(layer);
+        return layer;
+    }
+
+
+    private JPanel wrapWithSlideFade(JComponent comp) {
+        FadeInLayerUI ui = new FadeInLayerUI();
+        JLayer<JComponent> layer = new JLayer<>(comp, ui);
+
+        ui.startFade(layer);
+
+        JPanel container = new JPanel(new BorderLayout());
+        container.setOpaque(false);
+        container.add(layer, BorderLayout.CENTER);
+
+        return container;
+    }
+
+
+
+
 
     /* ------------------------------ MENU SCREEN ------------------------------ */
 
@@ -204,25 +236,58 @@ public class MineSweeperPrototype extends JFrame {
         JPanel page = new JPanel(new BorderLayout());
         page.setOpaque(false);
 
-        JPanel center = new JPanel(new GridBagLayout());
-        center.setOpaque(false);
+        // ❄️ SNOW behind menu
+        SnowPanel snow = new SnowPanel();
+        snow.setLayout(new GridBagLayout());
 
-        JPanel card = woodCard();
-        card.setPreferredSize(new Dimension(520, 380));
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        // MAIN GLASS CARD
+        JPanel glass = new JPanel() {
+        	@Override
+        	protected void paintComponent(Graphics g) {
+        	    Float alpha = (Float) getClientProperty("fadeAlpha");
+        	    float a = (alpha == null ? 1f : alpha);
 
-        JLabel title = new JLabel("MINESWEEPER");
+        	    Graphics2D g2 = (Graphics2D) g.create();
+        	    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
+
+        	    // Your frosted drawing
+        	    Color frost = new Color(20, 35, 35, 170);
+        	    g2.setColor(frost);
+        	    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 35, 35);
+
+        	    g2.setColor(new Color(160, 255, 255, 130));
+        	    g2.setStroke(new BasicStroke(3f));
+        	    g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 30, 30);
+
+        	    g2.dispose();
+        	    super.paintComponent(g);
+        	}
+
+        };
+        glass.setOpaque(false);
+        glass.setPreferredSize(new Dimension(520, 380));
+        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
+        glass.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+
+        // TITLE
+        JLabel title = new JLabel("MINESWEEPER", SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        title.setFont(new Font("Georgia", Font.BOLD, 40));
-        title.setForeground(MOSS_GLOW);
+        title.setFont(new Font("Georgia", Font.BOLD, 48));
+        title.setForeground(new Color(190, 255, 220));   // icy mint glow
 
-        JLabel subtitle = new JLabel("+ Trivia — Forest Edition");
+        JLabel subtitle = new JLabel("+ Trivia — Forest Edition", SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        subtitle.setFont(new Font("Georgia", Font.PLAIN, 18));
-        subtitle.setForeground(TEXT_MUTED);
+        subtitle.setFont(new Font("Georgia", Font.PLAIN, 22));
+        subtitle.setForeground(new Color(170, 220, 200));
 
-        JButton newGame = woodButton("New Game");
-        JButton exit    = woodButton("Exit");
+        glass.add(title);
+        glass.add(Box.createVerticalStrut(8));
+        glass.add(subtitle);
+        glass.add(Box.createVerticalStrut(45));
+
+        // FROSTED BUTTON STYLE
+        JButton newGame = createFrostedButton("New Game");
+        JButton exit = createFrostedButton("Exit");
 
         newGame.addActionListener(e -> cards.show(root, SCREEN_NEW_GAME));
         exit.addActionListener(e -> {
@@ -232,40 +297,128 @@ public class MineSweeperPrototype extends JFrame {
             if (r == JOptionPane.YES_OPTION) System.exit(0);
         });
 
-        card.add(Box.createVerticalStrut(28));
-        card.add(title);
-        card.add(Box.createVerticalStrut(8));
-        card.add(subtitle);
-        card.add(Box.createVerticalStrut(36));
-        card.add(newGame);
-        card.add(Box.createVerticalStrut(14));
-        card.add(exit);
-        card.add(Box.createVerticalGlue());
+        glass.add(newGame);
+        glass.add(Box.createVerticalStrut(18));
+        glass.add(exit);
 
-        center.add(card);
-        page.add(center, BorderLayout.CENTER);
+        // ⭐ Christmas lights above
+        LightsOverlay lights = new LightsOverlay();
+
+        // STACKING LAYERS
+        JPanel centerLayer = new JPanel(new BorderLayout());
+        centerLayer.setOpaque(false);
+        centerLayer.add(glass, BorderLayout.CENTER);
+        centerLayer.add(lights, BorderLayout.NORTH);
+
+        snow.add(centerLayer);   // snow behind the menu
+
+        page.add(snow, BorderLayout.CENTER);
+
+        JComponent faded = wrapWithFade(glass);
+        snow.removeAll();
+        snow.add(faded);   // menu panel now fades in
+        snow.add(centerLayer);
+
+
         return page;
     }
+    private JButton createFrostedButton(String text) {
+        JButton b = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                Color base = new Color(45, 30, 20, 200);
+                Color hover = new Color(60, 45, 30, 220);
+
+                Color bg = getModel().isRollover() ? hover : base;
+                g2.setColor(bg);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+
+                // icy glow border
+                g2.setColor(new Color(160, 255, 255, getModel().isRollover() ? 180 : 120));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 16, 16);
+
+                super.paintComponent(g);
+            }
+        };
+
+        b.setForeground(new Color(200, 255, 230));
+        b.setFont(new Font("Georgia", Font.BOLD, 18));
+        b.setFocusPainted(false);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setBorderPainted(false);
+        b.setContentAreaFilled(false);
+        b.setOpaque(false);
+        b.setPreferredSize(new Dimension(200, 48));
+
+        return b;
+    }
+    
+
 
     /* ------------------------------ NEW GAME SCREEN ------------------------------ */
 
     private JPanel buildNewGame() {
+
+        // OUTER PAGE (transparent)
         JPanel page = new JPanel(new BorderLayout());
         page.setOpaque(false);
 
-        JPanel header = woodHeader("NEW GAME SETUP");
-        page.add(header, BorderLayout.NORTH);
+        // ❄ Snow behind the setup card
+        SnowPanel snow = new SnowPanel();
+        snow.setLayout(new GridBagLayout());
 
-        JPanel holder = new JPanel(new GridBagLayout());
-        holder.setOpaque(false);
+        // 🎄 Christmas lights across top
+        LightsOverlay lights = new LightsOverlay();
 
-        JPanel formCard = woodCard();
-        formCard.setPreferredSize(new Dimension(520, 360));
+        // 🧊 Frosted glass card (same style as menu)
+        JPanel glass = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Float alpha = (Float) getClientProperty("fadeAlpha");
+                float a = (alpha == null ? 1f : alpha);
 
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
+
+                // Frost panel background
+                g2.setColor(new Color(20, 35, 35, 170));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 35, 35);
+
+                // Frost border
+                g2.setColor(new Color(160, 255, 255, 130));
+                g2.setStroke(new BasicStroke(3f));
+                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 30, 30);
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+
+        glass.setOpaque(false);
+        glass.setPreferredSize(new Dimension(520, 420));
+        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
+        glass.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+
+        // ⭐ TITLE
+        JLabel title = new JLabel("NEW GAME SETUP", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setFont(new Font("Georgia", Font.BOLD, 38));
+        title.setForeground(new Color(190, 255, 220));
+
+        glass.add(title);
+        glass.add(Box.createVerticalStrut(25));
+
+        // -------------------------------
+        // FORM (same fields but prettier)
+        // -------------------------------
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
         GridBagConstraints gc = new GridBagConstraints();
-        gc.insets = new Insets(12, 16, 12, 16);
+        gc.insets = new Insets(12, 12, 12, 12);
         gc.fill = GridBagConstraints.HORIZONTAL;
 
         JLabel l1 = new JLabel("Player 1 Name:");
@@ -273,18 +426,19 @@ public class MineSweeperPrototype extends JFrame {
         JLabel l3 = new JLabel("Difficulty:");
 
         for (JLabel l : new JLabel[]{l1, l2, l3}) {
-            l.setFont(new Font("Georgia", Font.BOLD, 15));
-            l.setForeground(TEXT_PRIMARY);
+            l.setFont(new Font("Georgia", Font.BOLD, 17));
+            l.setForeground(new Color(225, 245, 240));
         }
 
         styleField(tfP1);
         styleField(tfP2);
 
-        cbDifficulty.setFont(new Font("Georgia", Font.PLAIN, 14));
-        cbDifficulty.setBackground(WOOD);
-        cbDifficulty.setForeground(TEXT_PRIMARY);
-        cbDifficulty.setBorder(BorderFactory.createLineBorder(WOOD_LIGHT, 1, true));
+        cbDifficulty.setFont(new Font("Georgia", Font.PLAIN, 15));
+        cbDifficulty.setBackground(new Color(50, 40, 28));
+        cbDifficulty.setForeground(new Color(240, 235, 220));
+        cbDifficulty.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
 
+        // Layout
         gc.gridx = 0; gc.gridy = 0; gc.anchor = GridBagConstraints.LINE_END;
         form.add(l1, gc);
         gc.gridx = 1; gc.anchor = GridBagConstraints.LINE_START;
@@ -300,26 +454,36 @@ public class MineSweeperPrototype extends JFrame {
         gc.gridx = 1; gc.anchor = GridBagConstraints.LINE_START;
         form.add(cbDifficulty, gc);
 
+        // Buttons
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
         actions.setOpaque(false);
-        JButton back  = woodButton("Back");
-        JButton start = woodButton("Start Game");
-        actions.add(start);
-        actions.add(back);
+
+        JButton back  = createFrostedButton("Back");
+        JButton start = createFrostedButton("Start Game");
 
         back.addActionListener(e -> cards.show(root, SCREEN_MENU));
         start.addActionListener(e -> startGame());
 
+        actions.add(start);
+        actions.add(back);
+
         gc.gridx = 0; gc.gridy = 3; gc.gridwidth = 2;
-        gc.anchor = GridBagConstraints.CENTER;
         form.add(actions, gc);
 
-        formCard.add(form, BorderLayout.CENTER);
-        holder.add(formCard);
-        page.add(holder, BorderLayout.CENTER);
+        glass.add(form);
 
-        return page;
+        // Stack snow + glass card + lights
+        JPanel stack = new JPanel(new BorderLayout());
+        stack.setOpaque(false);
+        stack.add(lights, BorderLayout.NORTH);
+        stack.add(glass, BorderLayout.CENTER);
+
+        snow.add(stack);
+
+        // Apply fade animation
+        return wrapWithSlideFade(snow);
     }
+
 
     private void styleField(JTextField tf) {
         tf.setFont(new Font("Georgia", Font.PLAIN, 14));
@@ -365,7 +529,8 @@ public class MineSweeperPrototype extends JFrame {
 
         root.remove(gamePanel);
         gamePanel = buildGame(rows, cols);
-        root.add(gamePanel, SCREEN_GAME);
+        root.add(wrapWithSlideFade(gamePanel), SCREEN_GAME);
+
 
         sharedPoints = 0;
         updateSharedScoreLabel();
@@ -387,48 +552,193 @@ public class MineSweeperPrototype extends JFrame {
 
     private TileButton tileButton(TileSet tiles) {
         TileButton b = new TileButton(TILE_SIZE);
+
+        // default cover tile (grass or brown)
         b.setIcon(tiles.normal);
+        b.setOpaque(false);
+        b.setContentAreaFilled(false);
+        b.setBorder(null);
+
+        // Hover (only if not revealed)
         b.getModel().addChangeListener(e -> {
             if (!b.isEnabled()) return;
+            if (b.isRevealedVisual()) return;   // no hover after reveal
             boolean roll = b.getModel().isRollover();
             b.setIcon(roll ? tiles.hover : tiles.normal);
         });
+
         return b;
     }
 
+ // 🎆 FIREWORKS OVERLAY
+    class FireworksPanel extends JPanel {
+
+        private class Firework {
+            float x, y;
+            float dx, dy;
+            float life;
+            Color color;
+        }
+
+        private java.util.List<Firework> sparks = new java.util.ArrayList<>();
+        private final Timer timer;
+
+        FireworksPanel() {
+            setOpaque(false);
+
+            timer = new Timer(16, e -> {
+                update();
+                repaint();
+            });
+        }
+
+        void startFireworks() {
+            sparks.clear();
+
+            // spawn 80 sparks at random top positions
+            for (int i = 0; i < 80; i++) {
+                Firework f = new Firework();
+                f.x = (float)(getWidth() * Math.random());
+                f.y = (float)(getHeight() * Math.random() * 0.4);
+
+                double angle = Math.random() * Math.PI * 2;
+                float speed = 2f + (float)(Math.random() * 4);
+
+                f.dx = (float)(Math.cos(angle) * speed);
+                f.dy = (float)(Math.sin(angle) * speed);
+                f.life = 1f;
+
+                Color[] palette = {
+                    new Color(255,70,70),
+                    new Color(255,180,40),
+                    new Color(120,200,255),
+                    new Color(140,255,140),
+                    new Color(255,255,255)
+                };
+                f.color = palette[(int)(Math.random()*palette.length)];
+
+                sparks.add(f);
+            }
+
+            timer.start();
+        }
+
+        void update() {
+            for (Firework f : sparks) {
+                f.x += f.dx;
+                f.y += f.dy;
+                f.dy += 0.05f;   // gravity
+                f.life -= 0.015f;
+            }
+            sparks.removeIf(f -> f.life <= 0);
+
+            if (sparks.isEmpty()) {
+                timer.stop();
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            for (Firework f : sparks) {
+                int alpha = (int)(255 * f.life);
+                g2.setColor(new Color(f.color.getRed(), f.color.getGreen(), f.color.getBlue(), alpha));
+                g2.fillOval((int)f.x, (int)f.y, 6, 6);
+            }
+        }
+    }
+
     private JPanel buildGame(int rows, int cols) {
+
         JPanel page = new JPanel(new BorderLayout());
         page.setOpaque(false);
 
-        // allocate buttons array for both boards
-        buttons = new TileButton[2][rows][cols];
-
+        // ----------------------------
+        // 1) HEADER BAR
+        // ----------------------------
         page.add(headerBarForGame(), BorderLayout.NORTH);
 
-        // Player 1 (moss/grass)
+        // ----------------------------
+        // 2) Allocate buttons
+        // ----------------------------
+        buttons = new TileButton[2][rows][cols];
+
+        // ----------------------------
+        // 3) Build boards for both players
+        // ----------------------------
+        JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 25, 10));
+        boardsPanel.setOpaque(false);
+        boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
         TileSet moss = new TileSet(
-                loadIconFit(A_GRASS,   TILE_SIZE, TILE_SIZE),
+                loadIconFit(A_GRASS, TILE_SIZE, TILE_SIZE),
                 loadIconFit(A_GRASS_H, TILE_SIZE, TILE_SIZE)
         );
-        // Player 2 (brown tile)
+
         TileSet cedar = new TileSet(
                 loadIconFit(A_BROWN, TILE_SIZE, TILE_SIZE),
                 loadIconFit(A_BROWN, TILE_SIZE, TILE_SIZE)
         );
 
-        JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 25, 10));
-        boardsPanel.setOpaque(false);
-        boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
         boardsPanel.add(boardCard("Player 1 Board", rows, cols, moss, 0));
         boardsPanel.add(boardCard("Player 2 Board", rows, cols, cedar, 1));
 
-        page.add(boardsPanel, BorderLayout.CENTER);
+        // ----------------------------
+        // 4) SNOW BEHIND BOARDS
+        // ----------------------------
+        SnowPanel snow = new SnowPanel();
+        snow.setLayout(new BorderLayout());
+        snow.add(boardsPanel, BorderLayout.CENTER);
+
+        // ----------------------------
+        // 5) GLOWING LIGHTS ABOVE
+        // ----------------------------
+        LightsOverlay lights = new LightsOverlay();
+
+        // ----------------------------
+        // 6) LAYERED PANE: boards + fireworks overlay
+        // ----------------------------
+        fireworks = new FireworksPanel();
+
+        JLayeredPane layered = new JLayeredPane() {
+            @Override
+            public void doLayout() {
+                // Make all children full-size
+                for (Component c : getComponents()) {
+                    c.setBounds(0, 0, getWidth(), getHeight());
+                }
+            }
+        };
+        layered.setOpaque(false);
+        layered.add(snow, JLayeredPane.DEFAULT_LAYER);        // behind
+        layered.add(fireworks, JLayeredPane.PALETTE_LAYER);   // on top
+
+        // ----------------------------
+        // 7) Center wrapper (lights on top, layered in center)
+        // ----------------------------
+        JPanel centerWrapper = new JPanel(new BorderLayout());
+        centerWrapper.setOpaque(false);
+        centerWrapper.add(layered, BorderLayout.CENTER);
+        centerWrapper.add(lights, BorderLayout.NORTH);
+
+        // ----------------------------
+        // 8) Add to page
+        // ----------------------------
+        page.add(centerWrapper, BorderLayout.CENTER);
+
         return page;
     }
 
+
+
     private JPanel boardCard(String title, int rows, int cols, TileSet tiles, int ownerIdx) {
-        JPanel outer = woodCard();
+    	JPanel outer = new JPanel(new BorderLayout());
+    	outer.setOpaque(false);
+
 
         JLabel lbl = new JLabel(title, SwingConstants.CENTER);
         lbl.setFont(new Font("Georgia", Font.BOLD, 18));
@@ -445,6 +755,8 @@ public class MineSweeperPrototype extends JFrame {
                 final int cc = c;
 
                 final TileButton cellButton = tileButton(tiles);
+
+
                 buttons[ownerIdx][rr][cc] = cellButton;
 
                 final JPopupMenu m = new JPopupMenu();
@@ -475,9 +787,13 @@ public class MineSweeperPrototype extends JFrame {
 
         JScrollPane sp = new JScrollPane(grid);
         sp.setBorder(null);
-        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        sp.getViewport().setOpaque(false);
+        sp.setOpaque(false);
+        sp.setBackground(new Color(0,0,0,0));
+        sp.getViewport().setBackground(new Color(0,0,0,0));
+
         outer.add(sp, BorderLayout.CENTER);
+
 
         return outer;
     }
@@ -485,54 +801,336 @@ public class MineSweeperPrototype extends JFrame {
     /* ------------------------------ FLAG TOGGLE (NOW A METHOD) ------------------------------ */
 
     private void toggleFlag(int ownerIdx, int row, int col) {
+        // Only the current player can flag on their own board
+        int currentPlayer = p1Turn ? 0 : 1;
+        if (ownerIdx != currentPlayer) {
+            return;
+        }
+
         Board board = boards[ownerIdx];
         if (board == null) return;
+
         Cell modelCell = board.getCell(row, col);
 
+        // Can't flag revealed cells
         if (modelCell.isRevealed()) return;
 
+        // Toggle flag state in the model
         modelCell.toggleFlag();
         boolean flagged = modelCell.isFlagged();
 
+        // Update the button overlay icon
         TileButton cellButton = buttons[ownerIdx][row][col];
         int W = cellButton.getPreferredSize().width;
         int H = cellButton.getPreferredSize().height;
-        cellButton.setOverlayIcon(flagged ? loadIconFit(A_FLAG, W/2, H/2) : null);
+        cellButton.setOverlayIcon(flagged ? loadIconFit(A_FLAG, W / 2, H / 2) : null);
 
+        // Update per-player flag count
         flagsCount[ownerIdx] += flagged ? 1 : -1;
         if (flagsCount[ownerIdx] < 0) flagsCount[ownerIdx] = 0;
         refreshRightStats();
+
+        // 📊 Scoring rules for flags:
+        //   - Correct flag on a mine   → +1 point
+        //   - Wrong flag (not a mine)  → -3 points
+        if (flagged) {
+            if (modelCell.getType() == CellType.MINE) {
+                bumpScore(1);
+            } else {
+                bumpScore(-3);
+            }
+        }
     }
+
 
     /* ------------------------------ WIDGETS ------------------------------ */
 
+    /* ------------------------------ WIDGETS ------------------------------ */
+
+ // ❄️ SNOW PANEL — multi-layer, wind, sparkles
+    class SnowPanel extends JPanel {
+
+        private static class Snowflake {
+            float x, y, speed, drift;
+            float size;
+            float opacity;
+            boolean sparkle;
+        }
+
+        private final java.util.List<Snowflake> flakes = new java.util.ArrayList<>();
+        private final Timer timer;
+
+        SnowPanel() {
+            setOpaque(false);
+
+            // create snowflakes
+            for (int i = 0; i < 150; i++) {
+                flakes.add(makeFlake());
+            }
+
+            timer = new Timer(33, e -> {
+                updateFlakes();
+                repaint();
+            });
+            timer.start();
+        }
+
+        private Snowflake makeFlake() {
+            Snowflake f = new Snowflake();
+            f.x = (float)(Math.random() * 2000);
+            f.y = (float)(Math.random() * 1200);
+            f.speed = 1.5f + (float)Math.random() * 2f;
+            f.drift = -0.5f + (float)Math.random();
+            f.size = 2f + (float)Math.random() * 3f;
+            f.opacity = 0.4f + (float)Math.random() * 0.6f;
+            f.sparkle = Math.random() < 0.05;
+            return f;
+        }
+
+        private void updateFlakes() {
+            for (Snowflake f : flakes) {
+                f.y += f.speed;
+                f.x += f.drift;
+
+                if (f.sparkle)
+                    f.opacity = 0.6f + (float)Math.random()*0.4f;
+
+                if (f.y > getHeight()) {
+                    // recycle at top
+                    f.x = (float)(Math.random() * getWidth());
+                    f.y = -10;
+                }
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            for (Snowflake f : flakes) {
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, f.opacity));
+                g2.setColor(Color.white);
+                g2.fillOval((int)f.x, (int)f.y, (int)f.size, (int)f.size);
+
+                // sparkle
+                if (f.sparkle) {
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, f.opacity * 0.7f));
+                    g2.drawOval((int)f.x-1, (int)f.y-1, (int)f.size+2, (int)f.size+2);
+                }
+            }
+        }
+    }
+
+ // 🎄 Animated Christmas lights overlay
+    class LightsOverlay extends JPanel {
+
+        private static class Light {
+            int x, y, radius;
+            Color base;
+            float glowPhase;
+        }
+
+        private final java.util.List<Light> bulbs = new java.util.ArrayList<>();
+        private final Timer timer;
+
+        LightsOverlay() {
+            setOpaque(false);
+
+            // generate bulbs across top
+            for (int i = 0; i < 18; i++) {
+                Light L = new Light();
+                L.x = 80 + i*85;
+                L.y = 20;
+                L.radius = 8;
+                L.base = pickColor();
+                L.glowPhase = (float)(Math.random()*Math.PI*2);
+                bulbs.add(L);
+            }
+
+            timer = new Timer(50, e -> {
+                for (Light L : bulbs) {
+                    L.glowPhase += 0.1f;
+                }
+                repaint();
+            });
+            timer.start();
+        }
+
+        private Color pickColor() {
+            Color[] c = {
+                    new Color(255,75,75),
+                    new Color(255,180,40),
+                    new Color(120,200,255),
+                    new Color(140,255,140)
+            };
+            return c[(int)(Math.random()*c.length)];
+        }
+
+        @Override
+        
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            for (Light L : bulbs) {
+
+                float glow = 0.4f + (float) Math.sin(L.glowPhase) * 0.4f;
+                Color glowColor = new Color(
+                        (int)(L.base.getRed() * glow),
+                        (int)(L.base.getGreen() * glow),
+                        (int)(L.base.getBlue() * glow),
+                        150
+                );
+
+                // Glow halo
+                g2.setColor(glowColor);
+                g2.fillOval(L.x - L.radius * 2, L.y - L.radius * 2, L.radius * 4, L.radius * 4);
+
+                // Solid bulb
+                g2.setColor(L.base);
+                g2.fillOval(L.x - L.radius, L.y - L.radius, L.radius * 2, L.radius * 2);
+            }
+        }
+
+
+    }
+
+
+    
+    
     private static class TileButton extends JButton {
-        private Image overlay;
+
+        private Image overlay;          // ← THIS is the variable you were missing
+        private boolean revealedVisual = false;
+        private float revealAlpha = 0f;   // fade animation %
+        private boolean fading = false;
+        private java.util.List<Point> snowOnTile = new java.util.ArrayList<>();
+
+
         TileButton(int size) {
             setPreferredSize(new Dimension(size, size));
             setMargin(new Insets(0,0,0,0));
             setContentAreaFilled(false);
-            setBorderPainted(false);
+            setOpaque(false);
+            setBorder(null);
             setFocusPainted(false);
-            setHorizontalTextPosition(SwingConstants.CENTER);
-            setVerticalTextPosition(SwingConstants.CENTER);
             setFont(new Font("Georgia", Font.BOLD, 18));
             setForeground(Color.WHITE);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
         }
+
         void setOverlayIcon(ImageIcon icon) {
-            overlay = icon == null ? null : icon.getImage();
+            overlay = (icon == null) ? null : icon.getImage();
             repaint();
         }
-        @Override protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (overlay != null) {
-                int w = Math.min(getWidth(), getHeight()) * 3 / 5;
-                int x = (getWidth() - w)/2, y = (getHeight() - w)/2;
-                g.drawImage(overlay, x, y, w, w, this);
+
+        void setRevealedVisual(boolean r) {
+            if (r && !revealedVisual) {
+                revealedVisual = true;
+
+                // start fade animation
+                fading = true;
+                revealAlpha = 0f;
+
+                // add 3–5 snowflakes on tile
+                snowOnTile.clear();
+                int count = 3 + (int)(Math.random() * 3);
+                for (int i = 0; i < count; i++) {
+                    int x = (int)(Math.random() * getWidth());
+                    int y = (int)(Math.random() * getHeight());
+                    snowOnTile.add(new Point(x, y));
+                }
+
+                // animation timer
+                Timer t = new Timer(20, e -> {
+                    revealAlpha += 0.08f;
+                    if (revealAlpha >= 1f) {
+                        revealAlpha = 1f;
+                        fading = false;
+                        ((Timer)e.getSource()).stop();
+                    }
+                    repaint();
+                });
+                t.start();
+            } else {
+                revealedVisual = r;
             }
         }
+
+
+        boolean isRevealedVisual() {
+            return revealedVisual;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Draw transparent background
+            g2.setComposite(AlphaComposite.SrcOver);
+
+            // ---------------------------------
+            // 1) HIDDEN TILE (normal state)
+            // ---------------------------------
+            if (!revealedVisual) {
+                super.paintComponent(g2);
+
+                // draw overlay icons (flag)
+                if (overlay != null) {
+                    int iconSize = 16;
+                    int x = (getWidth() - iconSize) / 2;
+                    int y = (getHeight() - iconSize) / 2;
+                    g2.drawImage(overlay, x, y, iconSize, iconSize, this);
+                }
+
+                g2.dispose();
+                return;
+            }
+
+            // ---------------------------------
+            // 2) REVEALED TILE (fade animation)
+            // ---------------------------------
+            float alpha = fading ? revealAlpha : 1f;
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+
+            // draw TEXT (numbers)
+            super.paintComponent(g2);
+
+            // draw overlay icons (mine, spikes, question)
+            if (overlay != null) {
+                int iconSize = 16;
+                int x = (getWidth() - iconSize) / 2;
+                int y = (getHeight() - iconSize) / 2;
+                g2.drawImage(overlay, x, y, iconSize, iconSize, this);
+            }
+
+            // ---------------------------------
+            // 3) GLOW OUTLINE
+            // ---------------------------------
+            g2.setComposite(AlphaComposite.SrcOver);
+            g2.setStroke(new BasicStroke(2f));
+            g2.setColor(new Color(0, 255, 255, 120)); // cyan glow
+            g2.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, 6, 6);
+
+            // ---------------------------------
+            // 4) SNOW ACCUMULATION
+            // ---------------------------------
+            g2.setColor(new Color(255,255,255,230));
+            for (Point p : snowOnTile) {
+                g2.fillOval(p.x, p.y, 3, 3);
+            }
+
+            g2.dispose();
+        }
     }
+
+
+
+
 
     /* ------------------------------ HEADER BAR / SCORE / LIVES ------------------------------ */
 
@@ -631,70 +1229,216 @@ public class MineSweeperPrototype extends JFrame {
                         "• Shared lives (max 10); overflow converts to points\n",
                 "How to Play", JOptionPane.INFORMATION_MESSAGE);
     }
+    private void shakeWindow() {
+        final Point original = getLocation();
+        final int SHAKE_DISTANCE = 8;
+
+        Timer t = new Timer(15, null);
+        t.addActionListener(e -> {
+            int x = original.x + (int)(Math.random() * SHAKE_DISTANCE - SHAKE_DISTANCE/2);
+            int y = original.y + (int)(Math.random() * SHAKE_DISTANCE - SHAKE_DISTANCE/2);
+            setLocation(x, y);
+        });
+
+        // Stop shake after 250ms
+        new Timer(250, e -> {
+            t.stop();
+            setLocation(original);
+        }).start();
+
+        t.start();
+    }
 
     private void handleCellClick(int ownerIdx, int row, int col) {
         Board board = boards[ownerIdx];
         if (board == null) return;
 
         Cell cell = board.getCell(row, col);
-        if (cell.isRevealed() || cell.isFlagged()) {
+
+        // Flags block everything
+        if (cell.isFlagged()) {
+            return;
+        }
+
+        // Already revealed and NOT a special cell → nothing to do
+        if (cell.isRevealed()
+                && cell.getType() != CellType.QUESTION
+                && cell.getType() != CellType.SURPRISE) {
             return;
         }
 
         CellType type = cell.getType();
+        boolean usedTurn = false;
 
-        if (type == CellType.MINE) {
-            cell.reveal();
-            updateButtonForCell(ownerIdx, cell);
-            bumpRevealedForCurrentTurn();
-            JOptionPane.showMessageDialog(this,
-                    "BOOM! Mine hit!", "Mine",
-                    JOptionPane.WARNING_MESSAGE);
-            loseSharedLives(1);
-            toggleTurnLabel();
-        } else if (type == CellType.EMPTY) {
-            List<Cell> revealed = board.revealCascade(row, col);
-            for (Cell c : revealed) {
-                updateButtonForCell(ownerIdx, c);
-                bumpRevealedForCurrentTurn();
+        switch (type) {
+
+            case MINE -> {
+                // Only react first time we step on it
+                if (!cell.isRevealed()) {
+                    cell.reveal();
+                    updateButtonForCell(ownerIdx, cell);
+                    bumpRevealedForCurrentTurn();
+
+                    JOptionPane.showMessageDialog(this,
+                            "BOOM! Mine hit!", "Mine",
+                            JOptionPane.WARNING_MESSAGE);
+
+                    loseSharedLives(1);
+                    usedTurn = true;
+                    shakeWindow();
+
+                }
             }
-        } else if (type == CellType.NUMBER) {
-            cell.reveal();
-            updateButtonForCell(ownerIdx, cell);
-            bumpRevealedForCurrentTurn();
-        } else if (type == CellType.QUESTION) {
-            showQuestionDialog();
-            cell.reveal();
-            updateButtonForCell(ownerIdx, cell);
-            bumpRevealedForCurrentTurn();
-        } else if (type == CellType.SURPRISE) {
-            cell.reveal();
-            updateButtonForCell(ownerIdx, cell);
-            JOptionPane.showMessageDialog(this,
-                    "Surprise! (example effect)", "Surprise",
-                    JOptionPane.INFORMATION_MESSAGE);
-            bumpRevealedForCurrentTurn();
+
+            case EMPTY -> {
+                // First time: cascade reveal
+                if (!cell.isRevealed()) {
+                    java.util.List<Cell> revealed = board.revealCascade(row, col);
+                    for (Cell c : revealed) {
+                        updateButtonForCell(ownerIdx, c);
+                        bumpRevealedForCurrentTurn();
+                    }
+                    if (!revealed.isEmpty()) {
+                        usedTurn = true;
+                    }
+                }
+            }
+
+            case NUMBER -> {
+                // Simple one-cell reveal
+                if (!cell.isRevealed()) {
+                    cell.reveal();
+                    updateButtonForCell(ownerIdx, cell);
+                    bumpRevealedForCurrentTurn();
+                    usedTurn = true;
+                }
+            }
+
+            case QUESTION -> {
+                // SECOND CLICK: already revealed & not used yet → activation
+                if (cell.isRevealed() && !cell.isSpecialUsed()) {
+
+                    int baseCost = 5; // TODO: replace with value from the PDF
+
+                    int choice = JOptionPane.showConfirmDialog(
+                            this,
+                            "This is a Question cell.\n" +
+                            "Using it will cost " + baseCost + " points.\n" +
+                            "Do you want to answer it now?",
+                            "Use Question?",
+                            JOptionPane.YES_NO_OPTION
+                    );
+
+                    if (choice == JOptionPane.YES_OPTION) {
+                        bumpScore(-baseCost);   // pay base cost
+                        showQuestionDialog();   // this already handles extra +/- points & lives
+                        cell.setSpecialUsed(true);
+                    }
+
+                    usedTurn = true;  // activating it consumes your turn
+                    break;
+                }
+
+                // FIRST CLICK: not revealed yet → just show the icon, no popup
+                if (!cell.isRevealed()) {
+                    cell.reveal();
+                    updateButtonForCell(ownerIdx, cell); // question icon is drawn in updateButtonForCell
+                    bumpRevealedForCurrentTurn();
+                    usedTurn = true;
+                }
+            }
+
+            case SURPRISE -> {
+                // SECOND CLICK: already revealed & not used yet → activation
+                if (cell.isRevealed() && !cell.isSpecialUsed()) {
+
+                    int baseCost = 3; // TODO: replace with value from the PDF
+
+                    int choice = JOptionPane.showConfirmDialog(
+                            this,
+                            "This is a Surprise cell.\n" +
+                            "Using it will cost " + baseCost + " points.\n" +
+                            "Activate the surprise?",
+                            "Use Surprise?",
+                            JOptionPane.YES_NO_OPTION
+                    );
+
+                    if (choice == JOptionPane.YES_OPTION) {
+                        bumpScore(-baseCost);  // pay base cost
+
+                        // TODO: implement the real surprise effect from the PDF
+                        JOptionPane.showMessageDialog(this,
+                                "Surprise activated!\n(Apply real surprise logic here.)",
+                                "Surprise",
+                                JOptionPane.INFORMATION_MESSAGE);
+
+                        cell.setSpecialUsed(true);
+                    }
+
+                    usedTurn = true; // activation = one move
+                    break;
+                }
+
+                // FIRST CLICK: not revealed yet → just show spikes icon
+                if (!cell.isRevealed()) {
+                    cell.reveal();
+                    updateButtonForCell(ownerIdx, cell); // spikes icon is drawn in updateButtonForCell
+                    bumpRevealedForCurrentTurn();
+                    usedTurn = true;
+                }
+            }
+
+            default -> { /* nothing */ }
         }
+
+        // One action per turn: if something happened, switch to the other player
+        if (usedTurn) {
+            toggleTurnLabel();
+        }
+     // ----------------------------
+     // CHECK WIN CONDITION
+     // ----------------------------
+        if (boards[ownerIdx].isAllSafeCellsRevealed()) {
+            JOptionPane.showMessageDialog(this,
+                    "🎉 Congratulations! You cleared the board!",
+                    "Board Cleared",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            if (fireworks != null) {
+                fireworks.startFireworks();
+            }
+        }
+
     }
+
+
 
     private void updateButtonForCell(int ownerIdx, Cell cell) {
         TileButton btn = buttons[ownerIdx][cell.getRow()][cell.getCol()];
+
+        // 🔥 Make fully transparent when revealed
+        btn.setIcon(null);
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+
+        btn.setText("");
+        btn.setOverlayIcon(null);
+
+        CellType type = cell.getType();
         int W = btn.getPreferredSize().width;
         int H = btn.getPreferredSize().height;
 
-        btn.setIcon(loadIconFit(A_DIRT, W, H));
-        btn.setOverlayIcon(null);
-        btn.setText("");
+        switch (type) {
 
-        CellType type = cell.getType();
+            case MINE ->
+                btn.setOverlayIcon(loadIconFit(A_MINE, W / 2, H / 2));
 
-        if (type == CellType.MINE) {
-            btn.setOverlayIcon(loadIconFit(A_MINE, W / 2, H / 2));
-        } else if (type == CellType.NUMBER) {
-            int num = cell.getAdjacentMines();
-            btn.setText(String.valueOf(num));
+            case NUMBER -> {
+                int num = cell.getAdjacentMines();
+                btn.setText(String.valueOf(num));
 
-            Color[] pal = {
+                Color[] pal = {
                     new Color(52,152,219),
                     new Color(46,204,113),
                     new Color(231,76,60),
@@ -703,14 +1447,23 @@ public class MineSweeperPrototype extends JFrame {
                     new Color(26,188,156),
                     new Color(52,73,94),
                     new Color(149,165,166)
-            };
-            int idx = Math.min(Math.max(num - 1, 0), pal.length - 1);
-            btn.setForeground(pal[idx]);
-        } else if (type == CellType.SURPRISE) {
-            btn.setOverlayIcon(loadIconFit(A_SPIKES, W / 2, H / 2));
+                };
+                btn.setForeground(pal[Math.min(Math.max(num - 1, 0), pal.length - 1)]);
+            }
+
+            case SURPRISE ->
+                btn.setOverlayIcon(loadIconFit(A_SPIKES, W / 2, H / 2));
+
+            case QUESTION ->
+                btn.setOverlayIcon(loadIconFit(A_QUESTION, W / 2, H / 2));
         }
-        // QUESTION cells still look like empty ground; you can add icon later if you want.
+
+        // 🔒 Disable hover for revealed cells
+        btn.setRevealedVisual(true);
     }
+
+
+
 
     private void bumpRevealedForCurrentTurn() {
         int idx = p1Turn ? 0 : 1;
@@ -867,5 +1620,9 @@ class GradientPaintPanel extends JPanel {
                 0, h, bottom
         ));
         g2.fillRect(0, 0, getWidth(), h);
-    }
+    } 
+    
+
+   
+
 }
