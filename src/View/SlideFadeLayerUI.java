@@ -15,6 +15,7 @@ public class SlideFadeLayerUI extends LayerUI<JComponent> {
             alpha += 0.04f;
             offset -= 2.5f;
 
+            
             if (alpha >= 1f) alpha = 1f;
             if (offset <= 0f) offset = 0f;
 

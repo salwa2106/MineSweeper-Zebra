@@ -6,6 +6,7 @@ import java.awt.*;
 
 class FadeInLayerUI extends LayerUI<JComponent> {
 
+	
     private float alpha = 0f;
     private Timer timer;
 

@@ -14,6 +14,7 @@ public enum Difficulty {
     public final int maxLives;
     public final int questionOrSurpriseCost;
 
+    
     Difficulty(int rows, int cols,
                int mines, int questionCells, int surpriseCells,
                int startLives, int maxLives, int questionOrSurpriseCost) {
