@@ -171,7 +171,8 @@ public class Board {
                     return false;
                 }
             }
-           
+            
+   
         }
         // All non-mine cells are revealed → board is cleared
         return true;
