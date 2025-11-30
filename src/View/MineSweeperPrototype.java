@@ -37,6 +37,7 @@
 	
 	
 	    private static final int TILE_SIZE = 44;
+	    private boolean gameInProgress = false;
 	    private JPanel[] boardWrappers = new JPanel[2];
 	    private TurnGlowPanel[] glowPanels = new TurnGlowPanel[2];
 	    private DimPanel[] dimPanels = new DimPanel[2];
@@ -389,20 +390,35 @@
 	        glass.add(Box.createVerticalStrut(45));
 	
 	        // FROSTED BUTTON STYLE
+	     // FROSTED BUTTON STYLE
 	        JButton newGame = createFrostedButton("New Game");
+	        JButton resume = createFrostedButton("Resume Game");
 	        JButton exit = createFrostedButton("Exit");
-	
+
+	        // ACTIONS
 	        newGame.addActionListener(e -> cards.show(root, SCREEN_NEW_GAME));
+
+	        // resume only works if a game is active
+	        resume.setEnabled(false);
+	        resume.addActionListener(e -> cards.show(root, SCREEN_GAME));
+
 	        exit.addActionListener(e -> {
 	            int r = JOptionPane.showConfirmDialog(this,
 	                    "Exit the game?", "Confirm",
 	                    JOptionPane.YES_NO_OPTION);
 	            if (r == JOptionPane.YES_OPTION) System.exit(0);
 	        });
-	
+
+	        // ADDING TO LAYOUT — IMPORTANT ORDER
 	        glass.add(newGame);
 	        glass.add(Box.createVerticalStrut(18));
+
+	        glass.add(resume);    // <-- THIS IS THE RESUME BUTTON
+	        glass.add(Box.createVerticalStrut(18));
+
 	        glass.add(exit);
+
+
 	
 	        // ⭐ Christmas lights above
 	        LightsOverlay lights = new LightsOverlay();
@@ -422,6 +438,15 @@
 	        snow.add(faded);   // menu panel now fades in
 	        snow.add(centerLayer);
 	
+	     // Enable or disable resume button when the menu becomes visible
+	        page.addHierarchyListener(e2 -> {
+	            if ((e2.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+	                if (page.isShowing()) {
+	                    resume.setEnabled(gameInProgress);
+	                }
+	            }
+	        });
+
 	
 	        return page;
 	    }
@@ -462,6 +487,10 @@
 	    
 	
 	
+	    private void updateResumeButtonState(JButton resume) {
+	        resume.setEnabled(gameInProgress);
+	    }
+
 	    /* ------------------------------ NEW GAME SCREEN ------------------------------ */
 	
 	    private JPanel buildNewGame() {
@@ -629,6 +658,8 @@
 	
 	        flagsCount[0] = flagsCount[1] = 0;
 	        revealedCount[0] = revealedCount[1] = 0;
+	        gameInProgress = true;
+
 	
 	        root.remove(gamePanel);
 	        gamePanel = buildGame(rows, cols);
