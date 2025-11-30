@@ -66,6 +66,7 @@ public class MineSweeperPrototype extends JFrame {
     private final JLabel sharedScoreLabel = new JLabel("Score: 0");
     private final JLabel rightStats       = new JLabel();   // "<Player> • Revealed: X | Flags: Y"
     private int sharedPoints = 0;
+    
 
     private final JTextField tfP1 = new JTextField("Alice", 14);
     private final JTextField tfP2 = new JTextField("Bob", 14);
