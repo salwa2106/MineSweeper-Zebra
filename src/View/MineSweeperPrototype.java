@@ -339,68 +339,71 @@
 	    private JPanel buildMenu() {
 	        JPanel page = new JPanel(new BorderLayout());
 	        page.setOpaque(false);
-	
-	        // ❄️ SNOW behind menu
-	        SnowPanel snow = new SnowPanel();
-	        snow.setLayout(new GridBagLayout());
-	
-	        // MAIN GLASS CARD
-	        JPanel glass = new JPanel() {
-	        	@Override
-	        	protected void paintComponent(Graphics g) {
-	        	    Float alpha = (Float) getClientProperty("fadeAlpha");
-	        	    float a = (alpha == null ? 1f : alpha);
-	
-	        	    Graphics2D g2 = (Graphics2D) g.create();
-	        	    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
-	
-	        	    // Your frosted drawing
-	        	    Color frost = new Color(20, 35, 35, 170);
-	        	    g2.setColor(frost);
-	        	    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 35, 35);
-	
-	        	    g2.setColor(new Color(160, 255, 255, 130));
-	        	    g2.setStroke(new BasicStroke(3f));
-	        	    g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 30, 30);
-	
-	        	    g2.dispose();
-	        	    super.paintComponent(g);
-	        	}
-	
-	        };
-	        glass.setOpaque(false);
-	        glass.setPreferredSize(new Dimension(520, 380));
-	        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
-	        glass.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
-	
-	        // TITLE
-	        JLabel title = new JLabel("MINESWEEPER", SwingConstants.CENTER);
-	        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        title.setFont(new Font("Georgia", Font.BOLD, 48));
-	        title.setForeground(new Color(190, 255, 220));   // icy mint glow
-	
-	        JLabel subtitle = new JLabel("+ Trivia — Forest Edition", SwingConstants.CENTER);
-	        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        subtitle.setFont(new Font("Georgia", Font.PLAIN, 22));
-	        subtitle.setForeground(new Color(170, 220, 200));
-	
-	        glass.add(title);
-	        glass.add(Box.createVerticalStrut(8));
-	        glass.add(subtitle);
-	        glass.add(Box.createVerticalStrut(45));
-	
-	        // FROSTED BUTTON STYLE
-	     // FROSTED BUTTON STYLE
-	        JButton newGame = createFrostedButton("New Game");
-	        JButton resume = createFrostedButton("Resume Game");
-	        JButton exit = createFrostedButton("Exit");
 
-	        // ACTIONS
+	        // ❄️ Snow background
+	        SnowPanel snow = new SnowPanel();
+	        snow.setLayout(new GridBagLayout()); // centers contents vertically & horizontally
+
+	        // 🎄 Lights
+	        LightsOverlay lights = new LightsOverlay();
+
+	        // 🧊 Frosted glass (center card)
+	        JPanel glass = new JPanel() {
+	            @Override
+	            protected void paintComponent(Graphics g) {
+	                Float alpha = (Float) getClientProperty("fadeAlpha");
+	                float a = (alpha == null ? 1f : alpha);
+
+	                Graphics2D g2 = (Graphics2D) g.create();
+	                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
+
+	                // Frost background
+	                g2.setColor(new Color(20, 35, 35, 170));
+	                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
+
+	                // Frost border
+	                g2.setColor(new Color(160, 255, 255, 130));
+	                g2.setStroke(new BasicStroke(4f));
+	                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 36, 36);
+
+	                g2.dispose();
+	                super.paintComponent(g);
+	            }
+	        };
+
+	        glass.setOpaque(false);
+
+	        // 🔥 MAKE MENU BUTTONS BIGGER
+	        Dimension bigBtn = new Dimension(340, 70);
+	        Font bigMenuFont = new Font("Georgia", Font.BOLD, 26);
+
+
+	        // ❄️ ───────── MENU BUTTONS ───────── ❄️
+	        JButton newGame   = createFrostedButton("New Game");
+	        JButton resume    = createFrostedButton("Resume Game");
+	        JButton history   = createFrostedButton("History");
+	        JButton exit      = createFrostedButton("Exit");
+
+	        newGame.setPreferredSize(bigBtn);
+	        resume.setPreferredSize(bigBtn);
+	        history.setPreferredSize(bigBtn);
+	        exit.setPreferredSize(bigBtn);
+
+	        newGame.setFont(bigMenuFont);
+	        resume.setFont(bigMenuFont);
+	        history.setFont(bigMenuFont);
+	        exit.setFont(bigMenuFont);
+
+
+	        // Actions
 	        newGame.addActionListener(e -> cards.show(root, SCREEN_NEW_GAME));
 
-	        // resume only works if a game is active
-	        resume.setEnabled(false);
+	        // Resume works only if game is active
+	        resume.setEnabled(gameInProgress);
 	        resume.addActionListener(e -> cards.show(root, SCREEN_GAME));
+
+	        // NEW: History button on main menu
+	        history.addActionListener(e -> showHistory());
 
 	        exit.addActionListener(e -> {
 	            int r = JOptionPane.showConfirmDialog(this,
@@ -409,47 +412,49 @@
 	            if (r == JOptionPane.YES_OPTION) System.exit(0);
 	        });
 
-	        // ADDING TO LAYOUT — IMPORTANT ORDER
+	        // Title
+	        JLabel title = new JLabel("MINESWEEPER", SwingConstants.CENTER);
+	        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+	        title.setFont(new Font("Georgia", Font.BOLD, 50));
+	        title.setForeground(new Color(190, 255, 220));
+
+	        JLabel subtitle = new JLabel("+ Trivia — Forest Edition", SwingConstants.CENTER);
+	        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+	        subtitle.setFont(new Font("Georgia", Font.PLAIN, 24));
+	        subtitle.setForeground(new Color(170, 220, 200));
+
+	        // Layout inside frosted card
+	        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
+	        glass.setBorder(BorderFactory.createEmptyBorder(40, 60, 40, 60));
+
+	        glass.add(title);
+	        glass.add(Box.createVerticalStrut(10));
+	        glass.add(subtitle);
+	        glass.add(Box.createVerticalStrut(40));
+
 	        glass.add(newGame);
-	        glass.add(Box.createVerticalStrut(18));
-
-	        glass.add(resume);    // <-- THIS IS THE RESUME BUTTON
-	        glass.add(Box.createVerticalStrut(18));
-
+	        glass.add(Box.createVerticalStrut(20));
+	        glass.add(resume);
+	        glass.add(Box.createVerticalStrut(20));
+	        glass.add(history);   // <-- HISTORY BUTTON IN MAIN MENU
+	        glass.add(Box.createVerticalStrut(20));
 	        glass.add(exit);
 
+	        // Stack lights + frosted panel
+	        JPanel stacked = new JPanel(new BorderLayout());
+	        stacked.setOpaque(false);
+	        stacked.add(lights, BorderLayout.NORTH);
+	        stacked.add(glass, BorderLayout.CENTER);
 
-	
-	        // ⭐ Christmas lights above
-	        LightsOverlay lights = new LightsOverlay();
-	
-	        // STACKING LAYERS
-	        JPanel centerLayer = new JPanel(new BorderLayout());
-	        centerLayer.setOpaque(false);
-	        centerLayer.add(glass, BorderLayout.CENTER);
-	        centerLayer.add(lights, BorderLayout.NORTH);
-	
-	        snow.add(centerLayer);   // snow behind the menu
-	
+	        // Center everything in the middle of the screen
+	        snow.add(stacked);
+
 	        page.add(snow, BorderLayout.CENTER);
-	
-	        JComponent faded = wrapWithFade(glass);
-	        snow.removeAll();
-	        snow.add(faded);   // menu panel now fades in
-	        snow.add(centerLayer);
-	
-	     // Enable or disable resume button when the menu becomes visible
-	        page.addHierarchyListener(e2 -> {
-	            if ((e2.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
-	                if (page.isShowing()) {
-	                    resume.setEnabled(gameInProgress);
-	                }
-	            }
-	        });
 
-	
-	        return page;
+	        // Fade-in animation
+	        return wrapWithSlideFade(page);
 	    }
+
 	    private JButton createFrostedButton(String text) {
 	        JButton b = new JButton(text) {
 	            @Override
