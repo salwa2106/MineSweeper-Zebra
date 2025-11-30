@@ -4,20 +4,18 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/**
- * Static data holder for questions.
- * Loads them from a CSV file and lets the game pick random questions.
- */
 public class SysData {
 
-    // Change this if your CSV is somewhere else / has another name
-    private static final String CSV_FILE = "questions.csv";
-    private static final String SEP = ";";   // adjust to ',' if your file uses commas
+    // EXACT PATH to your CSV file
+    private static final String CSV_FILE = "src/resources/questions/questionsCell.csv";
+
+    // Use comma for CSV (Excel exported with commas)
+    private static final String SEP = ",";
 
     private static final List<Question> questions = new ArrayList<>();
     private static final Random rnd = new Random();
 
-    /** Called once at program startup. */
+    /** Called once when program starts (From MineSweeperPrototype) */
     public static void init() {
         loadFromCsv();
     }
@@ -34,105 +32,110 @@ public class SysData {
         questions.add(q);
     }
 
-    /** Returns a random question or null if none. */
+    /** Returns a random question from list, or null if empty. */
     public static Question nextRandom() {
-        if (questions.isEmpty()) return null;
+        if (questions.isEmpty()) {
+            System.err.println("⚠ No questions loaded. Check CSV file!");
+            return null;
+        }
         return questions.get(rnd.nextInt(questions.size()));
     }
 
-    // -------------------- CSV I/O --------------------
+    // -------------------- CSV LOADING --------------------
 
     public static void loadFromCsv() {
         questions.clear();
 
-        File f = new File(CSV_FILE);
-        if (!f.exists()) {
-            System.err.println("SysData: CSV file not found: " + CSV_FILE);
+        File file = new File(CSV_FILE);
+        if (!file.exists()) {
+            System.err.println("❌ ERROR: CSV file not found: " + file.getAbsolutePath());
             return;
         }
 
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                new FileInputStream(file), StandardCharsets.UTF_8))) {
 
             String line;
-            boolean first = true;
+            boolean headerSkipped = false;
+
             while ((line = br.readLine()) != null) {
-                if (first && line.toLowerCase().contains("question")) {
-                    // skip header line
-                    first = false;
+                if (!headerSkipped) { // Skip first header line
+                    headerSkipped = true;
                     continue;
                 }
-                first = false;
 
                 if (line.trim().isEmpty()) continue;
 
-                String[] parts = line.split(SEP, -1); // -1 => keep empty trailing fields
+                String[] parts = line.split(SEP, -1);
                 if (parts.length < 9) {
-                    // not enough columns – ignore
+                    System.err.println("⚠ Invalid row skipped: " + line);
                     continue;
                 }
 
                 String text = parts[0];
-                String a = parts[1];
-                String b = parts[2];
-                String c = parts[3];
-                String d = parts[4];
+                String optA = parts[1];
+                String optB = parts[2];
+                String optC = parts[3];
+                String optD = parts[4];
+                char correct = parts[5].trim().isEmpty() ? 'A' : parts[5].trim().toUpperCase().charAt(0);
 
-                char correct = parts[5].trim().isEmpty()
-                        ? 'A'
-                        : parts[5].trim().toUpperCase().charAt(0);
+                Integer pr = parseIntOrNull(parts[6]);
+                Integer pw = parseIntOrNull(parts[7]);
+                Integer life = parseIntOrNull(parts[8]);
 
-                Integer right = parseIntOrNull(parts[6]);
-                Integer wrong = parseIntOrNull(parts[7]);
-                Integer life  = parseIntOrNull(parts[8]);
-
-                Question q = new Question(text, a, b, c, d, correct, right, wrong, life);
-                questions.add(q);
+                questions.add(new Question(text, optA, optB, optC, optD, correct, pr, pw, life));
             }
+
+            System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    // -------------------- CSV SAVING --------------------
 
     public static void saveToCsv() {
         File f = new File(CSV_FILE);
-        try (BufferedWriter bw = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8))) {
 
-            // header line – adapt to your course’s exact format if needed
-            bw.write("question;optA;optB;optC;optD;correct;pointsRight;pointsWrong;lifeDelta");
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(f), StandardCharsets.UTF_8))) {
+
+            bw.write("Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta");
             bw.newLine();
 
             for (Question q : questions) {
-                bw.write(escape(q.getText()));        bw.write(SEP);
-                bw.write(escape(q.getOptA()));        bw.write(SEP);
-                bw.write(escape(q.getOptB()));        bw.write(SEP);
-                bw.write(escape(q.getOptC()));        bw.write(SEP);
-                bw.write(escape(q.getOptD()));        bw.write(SEP);
-                bw.write(String.valueOf(q.getCorrect())); bw.write(SEP);
-                bw.write(q.getPointsRight() == null ? "" : q.getPointsRight().toString()); bw.write(SEP);
-                bw.write(q.getPointsWrong() == null ? "" : q.getPointsWrong().toString()); bw.write(SEP);
-                bw.write(q.getLifeDelta() == null ? "" : q.getLifeDelta().toString());
+                bw.write(q.getText() + SEP);
+                bw.write(q.getOptA() + SEP);
+                bw.write(q.getOptB() + SEP);
+                bw.write(q.getOptC() + SEP);
+                bw.write(q.getOptD() + SEP);
+                bw.write(q.getCorrect() + SEP);
+                bw.write(nvl(q.getPointsRight()) + SEP);
+                bw.write(nvl(q.getPointsWrong()) + SEP);
+                bw.write(nvl(q.getLifeDelta()));
                 bw.newLine();
             }
+
+            System.out.println("✔ CSV saved successfully at " + f.getAbsolutePath());
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    // -------------------- Helpers --------------------
+
     private static Integer parseIntOrNull(String s) {
-        s = s.trim();
-        if (s.isEmpty()) return null;
         try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException e) {
+            s = s.trim();
+            return s.isEmpty() ? null : Integer.parseInt(s);
+        } catch (Exception e) {
             return null;
         }
     }
 
-    private static String escape(String s) {
-        if (s == null) return "";
-        // super-simple escaping: just avoid breaking the separator
-        return s.replace(SEP, ",");
+    private static String nvl(Integer n) {
+        return n == null ? "" : n.toString();
     }
 }
