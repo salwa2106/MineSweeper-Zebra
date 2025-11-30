@@ -41,6 +41,7 @@
 	    private TurnGlowPanel[] glowPanels = new TurnGlowPanel[2];
 	    private DimPanel[] dimPanels = new DimPanel[2];
 
+	    
 	
 	    // (for later when you fully hook MVC)
 	    private GameController controller;
