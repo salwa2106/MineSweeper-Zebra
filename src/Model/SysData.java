@@ -7,7 +7,33 @@ import java.util.*;
 public class SysData {
 
     // EXACT PATH to your CSV file
-    private static final String CSV_FILE = "src/resources/questions/questionsCell.csv";
+	private static final String CSV_FILE = getCSVPath();
+
+
+	private static String getCSVPath() {
+	    try {
+	        String path = SysData.class.getProtectionDomain()
+	                .getCodeSource().getLocation().getPath();
+	        String decoded = java.net.URLDecoder.decode(path, "UTF-8");
+
+	        // remove /bin if running in Eclipse
+	        if (decoded.contains("/bin")) {
+	            decoded = decoded.substring(0, decoded.indexOf("/bin"));
+	            System.out.println("CSV path (Dev): " + decoded + "/src/resources/questions/questionsCell.csv");
+	            return decoded + "/src/resources/questions/questionsCell.csv";
+	        }
+
+	        // running from JAR
+	        decoded = decoded.substring(0, decoded.lastIndexOf("/"));
+	        System.out.println("CSV path (JAR): " + decoded + "/resources/questions/questionsCell.csv");
+	        return decoded + "/resources/questions/questionsCell.csv";
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+
 
     // Use comma for CSV (Excel exported with commas)
     private static final String SEP = ",";

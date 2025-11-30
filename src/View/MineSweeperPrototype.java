@@ -22,20 +22,44 @@
 		
 		
 	    /* ------------------------------ FOREST ASSETS ------------------------------ */
-	    private static final String A_BG          = "src/assets/forest/forest_bg_1920x1080.png";
-	    private static final String A_GRASS       = "src/assets/forest/tile_grass.png";
-	    private static final String A_GRASS_H     = "src/assets/forest/tile_grass_hover.png";
-	    private static final String A_DIRT        = "src/assets/forest/tile_dirt.png";
-	    private static final String A_FLAG        = "src/assets/forest/icon_flag.png";
-	    private static final String A_MINE        = "src/assets/forest/icon_mine.png";
-	    private static final String A_SPIKES      = "src/assets/forest/mushroom_surprise.png";
-	    private static final String A_HEART_FULL  = "src/assets/forest/heart_full.png";
-	    private static final String A_HEART_EMPTY = "src/assets/forest/heart_empty.png";
-	    private static final String A_BROWN       = "src/assets/forest/tile_brown.png";
-	    private static final String A_QUESTION = "src/assets/forest/question.png";
-	    private static final Color GRID_LINE = new Color(212,175,55,140);
+		private static final String A_BG        = fixPath("assets/forest/forest_bg_1920x1080.png");
+		private static final String A_GRASS     = fixPath("assets/forest/tile_grass.png");
+		private static final String A_GRASS_H   = fixPath("assets/forest/tile_grass_hover.png");
+		private static final String A_DIRT      = fixPath("assets/forest/tile_dirt.png");
+		private static final String A_FLAG      = fixPath("assets/forest/icon_flag.png");
+		private static final String A_MINE      = fixPath("assets/forest/icon_mine.png");
+		private static final String A_SPIKES    = fixPath("assets/forest/mushroom_surprise.png");
+		private static final String A_HEART_FULL= fixPath("assets/forest/heart_full.png");
+		private static final String A_HEART_EMPTY=fixPath("assets/forest/heart_empty.png");
+		private static final String A_BROWN     = fixPath("assets/forest/tile_brown.png");
+		private static final String A_QUESTION  = fixPath("assets/forest/question.png");
+
 	
-	
+	    private static String fixPath(String rel) {
+	        try {
+	            String base = MineSweeperPrototype.class.getProtectionDomain()
+	                    .getCodeSource().getLocation().getPath();
+
+	            String decoded = java.net.URLDecoder.decode(base, "UTF-8");
+
+	            // Running in Eclipse (inside /bin/)
+	            if (decoded.contains("/bin")) {
+	                decoded = decoded.substring(0, decoded.indexOf("/bin"));
+	                return decoded + "/src/" + rel;
+	            }
+
+	            // Running from JAR
+	            decoded = decoded.substring(0, decoded.lastIndexOf("/"));
+	            return decoded + "/" + rel;
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return rel;
+	        }
+	    }
+
+
+
 	    private static final int TILE_SIZE = 44;
 	    private boolean gameInProgress = false;
 	    private JPanel[] boardWrappers = new JPanel[2];
@@ -247,11 +271,33 @@
 	        }
 	    }
 
+	    private static String getHistoryPath() {
+	        try {
+	            String path = SysData.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+	            String decoded = java.net.URLDecoder.decode(path, "UTF-8");
+
+	            if (decoded.endsWith(".jar")) {
+	                decoded = decoded.substring(0, decoded.lastIndexOf("/"));
+	                System.out.println("History path (JAR): " + decoded + "/history/game_history.csv");
+	                return decoded + "/history/game_history.csv";
+	            } else {
+	                decoded = decoded.substring(0, decoded.lastIndexOf("/"));
+	                System.out.println("History path (Dev): " + decoded + "/src/history/game_history.csv");
+	                return decoded + "/src/history/game_history.csv";
+	            }
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return null;
+	        }
+	    }
 
 	
 	    
 	    private void loadHistoryFromCSV() {
-	        java.io.File file = new java.io.File("game_history.csv");
+	    	java.io.File file = new java.io.File(getHistoryPath());
+
+
 
 	        if (!file.exists()) return;  // no history yet
 
