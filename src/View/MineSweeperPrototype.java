@@ -1784,7 +1784,6 @@
 	                gainSharedLives(1);
 	            } else if (ans != null) {
 	                JOptionPane.showMessageDialog(this, "Wrong! -1 point and -1 life");
-	                bumpScore(-1);
 	                loseSharedLives(1);
 	            }
 	            return;
@@ -1827,8 +1826,15 @@
 	
 	    private void bumpScore(int delta) {
 	        sharedPoints += delta;
+
+	        // ❗ Ensure score never becomes negative
+	        if (sharedPoints < 0) {
+	            sharedPoints = 0;
+	        }
+
 	        updateSharedScoreLabel();
 	    }
+
 	
 	    private void updateSharedScoreLabel() {
 	        sharedScoreLabel.setText(" " + sharedPoints);
