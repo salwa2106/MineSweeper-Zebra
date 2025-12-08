@@ -1524,6 +1524,12 @@
 	
 	    private void handleCellClick(int ownerIdx, int row, int col) {
 
+	    	
+	    	// ⛔ If the game is over (no lives), do nothing
+	        if (sharedLives == 0) {
+	            return;
+	        }
+
 	        // 🔒 ONLY CURRENT PLAYER MAY CLICK THEIR OWN BOARD
 	        int currentPlayer = p1Turn ? 0 : 1;
 	        if (ownerIdx != currentPlayer) {
@@ -1915,24 +1921,47 @@
 	
 	    private void loseSharedLives(int n) {
 	        if (n <= 0) return;
+
 	        sharedLives = Math.max(0, sharedLives - n);
 	        updateSharedHearts();
-	        if (sharedLives == 0) {
-	        	String p1 = tfP1.getText().trim();
-	        	String p2 = tfP2.getText().trim();
 
-	        	gameHistory.add(new String[]{
-	        	    p1 + " & " + p2,
-	        	    "Game Over (0 lives)",
-	        	    String.valueOf(sharedPoints),
-	        	    currentDifficulty.name(),
-	        	    String.valueOf(java.time.LocalDateTime.now())
-	        	});
-	            JOptionPane.showMessageDialog(this,
-	                    "Game Over – Final Score: " + sharedPoints,
-	                    "Game Over", JOptionPane.INFORMATION_MESSAGE);
+	        if (sharedLives == 0) {
+	            // 🔹 1) Add this finished game to history (LOSE case)
+	            String p1 = tfP1.getText().trim();
+	            String p2 = tfP2.getText().trim();
+	            gameHistory.add(new String[]{
+	                    p1 + " & " + p2,
+	                    "Game Over (0 lives)",
+	                    String.valueOf(sharedPoints),
+	                    currentDifficulty.name(),
+	                    String.valueOf(java.time.LocalDateTime.now())
+	            });
+
+	            // 🔹 2) Ask if they want a new game
+	            String message = "Game Over – Final Score: " + sharedPoints
+	                    + "\n\nDo you want to start a new game?";
+
+	            int choice = JOptionPane.showConfirmDialog(
+	                    this,
+	                    message,
+	                    "Game Over",
+	                    JOptionPane.YES_NO_OPTION,
+	                    JOptionPane.INFORMATION_MESSAGE
+	            );
+
+	            if (choice == JOptionPane.YES_OPTION) {
+	                // Start a fresh game with same names + chosen difficulty
+	                startGame();
+	            } else {
+	                // Stay on the same screen, but game is over.
+	                // You already block further clicks with:
+	                // if (sharedLives == 0) return; in handleCellClick(...)
+	                // Optionally also:
+	                // gameInProgress = false;
+	            }
 	        }
 	    }
+
 	
 	    private void exportHistoryToCSV() {
 	        try {
@@ -1947,7 +1976,7 @@
 
 	            java.io.File file = new java.io.File(path);
 
-	            // Ensure parent folder exists (history/ or src/history/)
+	            // Make sure the folder (history/ or src/history/) exists
 	            java.io.File parent = file.getParentFile();
 	            if (parent != null && !parent.exists()) {
 	                parent.mkdirs();
@@ -1976,6 +2005,7 @@
 	                    JOptionPane.ERROR_MESSAGE);
 	        }
 	    }
+
 
 
 	    
