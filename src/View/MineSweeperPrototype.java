@@ -295,10 +295,12 @@
 	
 	    
 	    private void loadHistoryFromCSV() {
-	    	java.io.File file = new java.io.File(getHistoryPath());
+	        String path = getHistoryPath();
+	        if (path == null) {
+	            return; // could not resolve path
+	        }
 
-
-
+	        java.io.File file = new java.io.File(path);
 	        if (!file.exists()) return;  // no history yet
 
 	        try (java.util.Scanner sc = new java.util.Scanner(file)) {
@@ -1934,18 +1936,32 @@
 	
 	    private void exportHistoryToCSV() {
 	        try {
-	            java.io.File file = new java.io.File("game_history.csv");
-	            java.io.PrintWriter pw = new java.io.PrintWriter(file);
-
-	            // Header
-	            pw.println("Player,Result,Score,Difficulty,Date");
-
-	            // Rows
-	            for (String[] row : gameHistory) {
-	                pw.println(String.join(",", row));
+	            String path = getHistoryPath();
+	            if (path == null) {
+	                JOptionPane.showMessageDialog(this,
+	                        "Could not determine history file path.",
+	                        "Export Error",
+	                        JOptionPane.ERROR_MESSAGE);
+	                return;
 	            }
 
-	            pw.close();
+	            java.io.File file = new java.io.File(path);
+
+	            // Ensure parent folder exists (history/ or src/history/)
+	            java.io.File parent = file.getParentFile();
+	            if (parent != null && !parent.exists()) {
+	                parent.mkdirs();
+	            }
+
+	            try (java.io.PrintWriter pw = new java.io.PrintWriter(file)) {
+	                // Header
+	                pw.println("Player,Result,Score,Difficulty,Date");
+
+	                // Rows
+	                for (String[] row : gameHistory) {
+	                    pw.println(String.join(",", row));
+	                }
+	            }
 
 	            JOptionPane.showMessageDialog(this,
 	                    "History exported successfully to:\n" + file.getAbsolutePath(),
@@ -1960,6 +1976,7 @@
 	                    JOptionPane.ERROR_MESSAGE);
 	        }
 	    }
+
 
 	    
 	    private void showHistory() {
