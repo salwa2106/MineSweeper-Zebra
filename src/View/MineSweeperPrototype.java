@@ -12,6 +12,7 @@
 	import java.awt.*;
 	import java.awt.event.*;
 	import java.util.List;
+	import java.util.Random;
 	
 	/**
 	 * MineSweeper + Trivia — Forest Edition (Dark Wood + Moss Glow Theme)
@@ -113,6 +114,7 @@
 	
 	    // whose turn?
 	    private boolean p1Turn = true;
+	    private final Random rng = new Random();
 	
 	    // Difficulty index (0=Easy,1=Medium,2=Hard) - kept for LIFE_OVERFLOW_POINTS usage
 	    private int difficultyIdx = 0;
@@ -293,6 +295,24 @@
 	    }
 
 	
+	    /** Cost (in points) to activate a Question/Surprise cell for current difficulty. */
+	    private int getQuestionActivationCost() {
+	        return switch (currentDifficulty) {
+	            case EASY   -> 5;
+	            case MEDIUM -> 8;
+	            case HARD   -> 12;
+	        };
+	    }
+
+	    /** Size of the good/bad surprise effect (points) for current difficulty. */
+	    private int getSurpriseMagnitude() {
+	        return switch (currentDifficulty) {
+	            case EASY   -> 8;
+	            case MEDIUM -> 12;
+	            case HARD   -> 16;
+	        };
+	    }
+
 	    
 	    private void loadHistoryFromCSV() {
 	        String path = getHistoryPath();
@@ -1078,13 +1098,6 @@
 	            cell.setFlagScored(true);
 	        }
 
-	        // --------------------------------------------------------------------
-	        // 🔄 NEW: FLAGGING uses your turn (just like a reveal)
-	        // Only apply turn switch if a flag was PLACED (not removed)
-	        // --------------------------------------------------------------------
-	        if (flagged) {
-	            toggleTurnLabel();
-	        }
 	    }
 
 
@@ -1631,43 +1644,85 @@
 	            ---------------------------------------------------- */
 	            case QUESTION -> {
 
-	                // SECOND CLICK → Activation
-	                if (cell.isRevealed() && !cell.isSpecialUsed()) {
+	                // If already USED → cannot activate again
+	                if (cell.isSpecialUsed()) {
+	                    break;
+	                }
 
-	                    int baseCost = 5; // from PDF later
+	                // SECOND CLICK → Activation (does NOT change turn)
+	                if (cell.isRevealed()) {
+
+	                    // 1) Let user choose question difficulty
+	                    String[] diffOptions = {"Easy", "Medium", "Hard", "Pro"};
+	                    String selection = (String) JOptionPane.showInputDialog(
+	                            this,
+	                            "Choose question difficulty:",
+	                            "Question Difficulty",
+	                            JOptionPane.QUESTION_MESSAGE,
+	                            null,
+	                            diffOptions,
+	                            diffOptions[0]
+	                    );
+
+	                    // user pressed Cancel or closed dialog → do nothing
+	                    if (selection == null) {
+	                        break;
+	                    }
+
+	                    String diffKey = selection.toLowerCase(); // "easy"/"medium"/"hard"/"pro"
+
+	                    // 2) Get random question of that difficulty
+	                    Question q = SysData.nextRandomByDifficulty(diffKey);
+	                    if (q == null) {
+	                        JOptionPane.showMessageDialog(
+	                                this,
+	                                "No questions available for '" + selection + "' difficulty.",
+	                                "Question Cell",
+	                                JOptionPane.WARNING_MESSAGE
+	                        );
+	                        break;
+	                    }
+
+	                    // 3) Ask for confirmation with cost (depends on game difficulty)
+	                    int baseCost = getQuestionActivationCost();
 
 	                    int choice = JOptionPane.showConfirmDialog(
 	                            this,
 	                            "This is a Question cell.\n" +
-	                            "Using it will cost " + baseCost + " points.\n" +
-	                            "Do you want to answer it now?",
-	                            "Use Question?",
+	                            "Using it costs " + baseCost + " points.\n" +
+	                            "Do you want to answer a " + selection.toLowerCase() + " question now?",
+	                            "Question Cell",
 	                            JOptionPane.YES_NO_OPTION
 	                    );
 
 	                    if (choice == JOptionPane.YES_OPTION) {
+	                        // pay activation cost
 	                        bumpScore(-baseCost);
-	                        showQuestionDialog();
+
+	                        // show the chosen question, apply points/lives according to the spec
+	                        showQuestionDialog(q);
+
+	                        // mark cell as USED and update look
 	                        cell.setSpecialUsed(true);
+	                        updateButtonForCell(ownerIdx, cell);
 	                    }
 
-	                    usedTurn = true;
+	                    // ✅ NO usedTurn = true here → same player keeps the turn
 	                    break;
 	                }
 
-	                // FIRST CLICK → Reveal only
+	                // FIRST CLICK → Reveal (this DOES change turn)
 	                if (!cell.isRevealed()) {
 	                    cell.reveal();
 	                    updateButtonForCell(ownerIdx, cell);
 	                    bumpRevealedForCurrentTurn();
 
-	                    // ⭐ SAFE CELL SCORING
 	                    if (!cell.isRevealScored()) {
 	                        bumpScore(1);
 	                        cell.setRevealScored(true);
 	                    }
 
-	                    usedTurn = true;
+	                    usedTurn = true;  // ✅ new cell opened → switch turn
 	                }
 	            }
 
@@ -1676,50 +1731,72 @@
 	            ---------------------------------------------------- */
 	            case SURPRISE -> {
 
-	                // SECOND CLICK → Activation
-	                if (cell.isRevealed() && !cell.isSpecialUsed()) {
+	                // If already USED → cannot activate again
+	                if (cell.isSpecialUsed()) {
+	                    break;
+	                }
 
-	                    int baseCost = 3; // from PDF later
+	                // SECOND CLICK → Activation (does NOT change turn)
+	                if (cell.isRevealed()) {
+
+	                    int baseCost  = getQuestionActivationCost(); // same cost as Question cell
+	                    int magnitude = getSurpriseMagnitude();      // ±8 / ±12 / ±16 points
 
 	                    int choice = JOptionPane.showConfirmDialog(
 	                            this,
 	                            "This is a Surprise cell.\n" +
-	                            "Using it will cost " + baseCost + " points.\n" +
-	                            "Activate the surprise?",
-	                            "Use Surprise?",
+	                            "Activating it costs " + baseCost + " points.\n" +
+	                            "There is a 50/50 chance for a good or bad surprise.\n" +
+	                            "Do you want to activate it?",
+	                            "Surprise Cell",
 	                            JOptionPane.YES_NO_OPTION
 	                    );
 
 	                    if (choice == JOptionPane.YES_OPTION) {
-	                        bumpScore(-baseCost);
+	                        bumpScore(-baseCost); // pay activation cost
 
-	                        JOptionPane.showMessageDialog(
-	                                this,
-	                                "Surprise activated!\n(Apply real surprise logic here.)",
-	                                "Surprise",
-	                                JOptionPane.INFORMATION_MESSAGE
-	                        );
+	                        boolean good = rng.nextBoolean(); // 50% good, 50% bad
+
+	                        if (good) {
+	                            bumpScore(magnitude);
+	                            gainSharedLives(1);
+	                            JOptionPane.showMessageDialog(
+	                                    this,
+	                                    "Good surprise! 🎁\n+" + magnitude + " points and +1 life.",
+	                                    "Good Surprise",
+	                                    JOptionPane.INFORMATION_MESSAGE
+	                            );
+	                        } else {
+	                            bumpScore(-magnitude);
+	                            loseSharedLives(1);
+	                            JOptionPane.showMessageDialog(
+	                                    this,
+	                                    "Bad surprise! 💀\n-" + magnitude + " points and -1 life.",
+	                                    "Bad Surprise",
+	                                    JOptionPane.WARNING_MESSAGE
+	                            );
+	                        }
 
 	                        cell.setSpecialUsed(true);
+	                        updateButtonForCell(ownerIdx, cell); // will show USED
 	                    }
 
-	                    usedTurn = true;
+	                    // ✅ NO usedTurn = true here → same player keeps the turn
 	                    break;
 	                }
 
-	                // FIRST CLICK → Reveal only
+	                // FIRST CLICK → Reveal (this DOES change turn)
 	                if (!cell.isRevealed()) {
 	                    cell.reveal();
 	                    updateButtonForCell(ownerIdx, cell);
 	                    bumpRevealedForCurrentTurn();
 
-	                    // ⭐ SAFE CELL SCORING
 	                    if (!cell.isRevealScored()) {
 	                        bumpScore(1);
 	                        cell.setRevealScored(true);
 	                    }
 
-	                    usedTurn = true;
+	                    usedTurn = true;  // ✅ new cell opened → switch turn
 	                }
 	            }
 
@@ -1764,54 +1841,78 @@
 	
 	    private void updateButtonForCell(int ownerIdx, Cell cell) {
 	        TileButton btn = buttons[ownerIdx][cell.getRow()][cell.getCol()];
-	
-	        // 🔥 Make fully transparent when revealed
+
+	        // base visual reset for revealed tiles
 	        btn.setIcon(null);
 	        btn.setOpaque(false);
 	        btn.setContentAreaFilled(false);
 	        btn.setBorderPainted(false);
-	
+
 	        btn.setText("");
 	        btn.setOverlayIcon(null);
-	
+
 	        CellType type = cell.getType();
 	        int TILE = computeTileSize(currentDifficulty.rows, currentDifficulty.cols);
 	        int W = TILE;
 	        int H = TILE;
 
-	
+	        boolean specialUsed = cell.isSpecialUsed();  // <--- key flag
+
 	        switch (type) {
-	
-	            case MINE ->
+
+	            case MINE -> {
+	                // mine always shows mine icon when revealed
 	                btn.setOverlayIcon(loadIconFit(A_MINE, W / 2, H / 2));
-	
+	            }
+
 	            case NUMBER -> {
 	                int num = cell.getAdjacentMines();
 	                btn.setText(String.valueOf(num));
-	
+
 	                Color[] pal = {
-	                    new Color(52,152,219),
-	                    new Color(46,204,113),
-	                    new Color(231,76,60),
-	                    new Color(155,89,182),
-	                    new Color(230,126,34),
-	                    new Color(26,188,156),
-	                    new Color(52,73,94),
-	                    new Color(149,165,166)
+	                        new Color(52,152,219),
+	                        new Color(46,204,113),
+	                        new Color(231,76,60),
+	                        new Color(155,89,182),
+	                        new Color(230,126,34),
+	                        new Color(26,188,156),
+	                        new Color(52,73,94),
+	                        new Color(149,165,166)
 	                };
 	                btn.setForeground(pal[Math.min(Math.max(num - 1, 0), pal.length - 1)]);
 	            }
-	
-	            case SURPRISE ->
-	                btn.setOverlayIcon(loadIconFit(A_SPIKES, W / 2, H / 2));
-	
-	            case QUESTION ->
-	                btn.setOverlayIcon(loadIconFit(A_QUESTION, W / 2, H / 2));
+
+	            case SURPRISE -> {
+	                if (specialUsed) {
+	                    // 🔒 USED surprise — text only, muted color
+	                    btn.setText("USED");
+	                    btn.setForeground(new Color(180, 180, 180));
+	                } else {
+	                    // normal (not used yet) surprise shows the spikes icon
+	                    btn.setOverlayIcon(loadIconFit(A_SPIKES, W / 2, H / 2));
+	                }
+	            }
+
+	            case QUESTION -> {
+	                if (specialUsed) {
+	                    // 🔒 USED question — text only, slightly bluish
+	                    btn.setText("USED");
+	                    btn.setForeground(new Color(190, 200, 255));
+	                } else {
+	                    // normal (not used yet) question shows question icon
+	                    btn.setOverlayIcon(loadIconFit(A_QUESTION, W / 2, H / 2));
+	                }
+	            }
+
+	            default -> {
+	                // EMPTY or any other type: nothing special to draw
+	            }
 	        }
-	
-	        // 🔒 Disable hover for revealed cells
+
+	        // Disable hover effect & run reveal animation
 	        btn.setRevealedVisual(true);
 	    }
+
 	
 	
 	
@@ -1822,61 +1923,210 @@
 	        refreshRightStats();
 	    }
 	
-	    private void showQuestionDialog() {
-	        Question q = SysData.nextRandom();
+	    /**
+	     * Ask a trivia question and apply points / lives according to:
+	     *  - Game difficulty (EASY / MEDIUM / HARD)
+	     *  - Question difficulty ("easy","medium","hard","pro")
+	     * as specified in the spec table.
+	     */
+	    private void showQuestionDialog(Question q) {
 	        if (q == null) {
-	            Object ans = JOptionPane.showInputDialog(this,
-	                    "What is the capital of France?",
+	            JOptionPane.showMessageDialog(this,
+	                    "No questions available.",
 	                    "Trivia Question",
-	                    JOptionPane.QUESTION_MESSAGE,
-	                    null,
-	                    new String[]{"A) London", "B) Berlin", "C) Paris", "D) Madrid"},
-	                    "C) Paris");
-	            if (ans != null && ans.toString().startsWith("C")) {
-	                JOptionPane.showMessageDialog(this, "Correct! +3 points and +1 life");
-	                bumpScore(3);
-	                gainSharedLives(1);
-	            } else if (ans != null) {
-	                JOptionPane.showMessageDialog(this, "Wrong! -1 point and -1 life");
-	                loseSharedLives(1);
-	            }
+	                    JOptionPane.WARNING_MESSAGE);
 	            return;
 	        }
-	
+
 	        String[] choices = new String[] {
 	                "A) " + q.getOptA(),
 	                "B) " + q.getOptB(),
 	                "C) " + q.getOptC(),
 	                "D) " + q.getOptD()
 	        };
-	
-	        Object ans = JOptionPane.showInputDialog(this,
+
+	        Object ans = JOptionPane.showInputDialog(
+	                this,
 	                q.getText(),
 	                "Trivia Question",
 	                JOptionPane.QUESTION_MESSAGE,
 	                null,
 	                choices,
-	                choices[0]);
-	
+	                choices[0]
+	        );
+
 	        if (ans == null) return;
-	
-	        char picked = ans.toString().trim().charAt(0);
+
+	        char picked  = ans.toString().trim().charAt(0);
 	        boolean correct = Character.toUpperCase(picked) == Character.toUpperCase(q.getCorrect());
-	
-	        int ptsRight = q.getPointsRight() != null ? q.getPointsRight() : 3;
-	        int ptsWrong = q.getPointsWrong() != null ? q.getPointsWrong() : -1;
-	        int lifeDelta = q.getLifeDelta() != null ? q.getLifeDelta() : 1;
-	
+
+	        // ------------------------
+	        // mapping from picture 2
+	        // ------------------------
+	        String qDiff = q.getDifficulty();
+	        if (qDiff == null) qDiff = "easy";
+	        qDiff = qDiff.trim().toLowerCase();
+
+	        int deltaPts  = 0;
+	        int deltaLife = 0;
+
+	        switch (currentDifficulty) {
+
+	            // ---------------- EASY GAME ----------------
+	            case EASY -> {
+	                switch (qDiff) {
+	                    case "easy" -> {
+	                        if (correct) {
+	                            deltaPts = 3;
+	                            deltaLife = 1;
+	                        } else {
+	                            // (-3pts) OR nothing
+	                            if (rng.nextBoolean()) deltaPts = -3;
+	                        }
+	                    }
+	                    case "medium" -> {
+	                        if (correct) {
+	                            // reveal a mine cell +6pts – we only implement the +6pts here
+	                            deltaPts = 6;
+	                            // TODO: optionally reveal a random mine cell (no extra score)
+	                        } else {
+	                            // (-6pts) OR nothing
+	                            if (rng.nextBoolean()) deltaPts = -6;
+	                        }
+	                    }
+	                    case "hard" -> {
+	                        if (correct) {
+	                            // 3x3 mine pattern +10pts – we only implement +10pts
+	                            deltaPts = 10;
+	                            // TODO: optionally place extra mines in 3x3 pattern
+	                        } else {
+	                            deltaPts = -10;
+	                        }
+	                    }
+	                    case "pro" -> {
+	                        if (correct) {
+	                            deltaPts = 15;
+	                            deltaLife = 2;
+	                        } else {
+	                            deltaPts = -15;
+	                            deltaLife = -1;
+	                        }
+	                    }
+	                }
+	            }
+
+	            // ---------------- MEDIUM GAME ----------------
+	            case MEDIUM -> {
+	                switch (qDiff) {
+	                    case "easy" -> {
+	                        if (correct) {
+	                            deltaPts = 8;
+	                            deltaLife = 1;
+	                        } else {
+	                            deltaPts = -8;
+	                        }
+	                    }
+	                    case "medium" -> {
+	                        if (correct) {
+	                            deltaPts = 10;
+	                            deltaLife = 1;
+	                        } else {
+	                            // ((-10pts) & (-1♥)) OR nothing
+	                            if (rng.nextBoolean()) {
+	                                deltaPts = -10;
+	                                deltaLife = -1;
+	                            }
+	                        }
+	                    }
+	                    case "hard" -> {
+	                        if (correct) {
+	                            deltaPts = 15;
+	                            deltaLife = 1;
+	                        } else {
+	                            deltaPts = -15;
+	                            deltaLife = -1;
+	                        }
+	                    }
+	                    case "pro" -> {
+	                        if (correct) {
+	                            deltaPts = 20;
+	                            deltaLife = 2;
+	                        } else {
+	                            // (-20pts & -1♥) OR (-20pts & -2♥)
+	                            deltaPts = -20;
+	                            deltaLife = rng.nextBoolean() ? -1 : -2;
+	                        }
+	                    }
+	                }
+	            }
+
+	            // ---------------- HARD GAME ----------------
+	            case HARD -> {
+	                switch (qDiff) {
+	                    case "easy" -> {
+	                        if (correct) {
+	                            deltaPts = 10;
+	                            deltaLife = 1;
+	                        } else {
+	                            deltaPts = -10;
+	                            deltaLife = -1;
+	                        }
+	                    }
+	                    case "medium" -> {
+	                        if (correct) {
+	                            // (+15pts & +1♥) OR (+15pts & +2♥)
+	                            deltaPts = 15;
+	                            deltaLife = rng.nextBoolean() ? 1 : 2;
+	                        } else {
+	                            deltaPts = -15;
+	                            deltaLife = -1;
+	                        }
+	                    }
+	                    case "hard" -> {
+	                        if (correct) {
+	                            deltaPts = 20;
+	                            deltaLife = 2;
+	                        } else {
+	                            deltaPts = -20;
+	                            deltaLife = -2;
+	                        }
+	                    }
+	                    case "pro" -> {
+	                        if (correct) {
+	                            deltaPts = 40;
+	                            deltaLife = 3;
+	                        } else {
+	                            deltaPts = -40;
+	                            deltaLife = -3;
+	                        }
+	                    }
+	                }
+	            }
+	        }
+
+	        // ---------------- apply the result ----------------
 	        if (correct) {
-	            JOptionPane.showMessageDialog(this, "Correct! +" + ptsRight + " points and +" + Math.max(0, lifeDelta) + " life");
-	            bumpScore(ptsRight);
-	            if (lifeDelta > 0) gainSharedLives(lifeDelta);
+	            String msg = "Correct answer!";
+	            if (deltaPts != 0)  msg += " " + (deltaPts > 0 ? "+" : "") + deltaPts + " pts.";
+	            if (deltaLife != 0) msg += " " + (deltaLife > 0 ? "+" : "") + deltaLife + " ♥.";
+	            JOptionPane.showMessageDialog(this, msg, "Trivia Result", JOptionPane.INFORMATION_MESSAGE);
 	        } else {
-	            JOptionPane.showMessageDialog(this, "Wrong! " + ptsWrong + " points and -" + Math.max(0, lifeDelta) + " life");
-	            bumpScore(ptsWrong);
-	            if (lifeDelta > 0) loseSharedLives(lifeDelta);
+	            String msg = "Wrong answer!";
+	            if (deltaPts != 0)  msg += " " + (deltaPts > 0 ? "+" : "") + deltaPts + " pts.";
+	            if (deltaLife != 0) msg += " " + (deltaLife > 0 ? "+" : "") + deltaLife + " ♥.";
+	            JOptionPane.showMessageDialog(this, msg, "Trivia Result", JOptionPane.WARNING_MESSAGE);
+	        }
+
+	        if (deltaPts != 0) {
+	            bumpScore(deltaPts);
+	        }
+	        if (deltaLife > 0) {
+	            gainSharedLives(deltaLife);
+	        } else if (deltaLife < 0) {
+	            loseSharedLives(-deltaLife);
 	        }
 	    }
+
 	
 	    private void bumpScore(int delta) {
 	        sharedPoints += delta;

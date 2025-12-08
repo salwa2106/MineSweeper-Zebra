@@ -13,13 +13,14 @@ public class Question {
     private char   correct;      // 'A' / 'B' / 'C' / 'D'
     private Integer pointsRight; 
     private Integer pointsWrong; 
-    private Integer lifeDelta;   
+    private Integer lifeDelta;  
+    private String difficulty;   // "easy", "medium", "hard", "pro"
 
     public Question() {}
 
     public Question(String text, String optA, String optB, String optC, String optD,
                     char correct, Integer pointsRight, Integer pointsWrong,
-                    Integer lifeDelta) {
+                    Integer lifeDelta, String difficulty) {
 
         this.text = text;
         this.optA = optA;
@@ -30,6 +31,7 @@ public class Question {
         this.pointsRight = pointsRight;
         this.pointsWrong = pointsWrong;
         this.lifeDelta = lifeDelta;
+        this.difficulty = difficulty;
     }
 
     // Getters
@@ -42,6 +44,10 @@ public class Question {
     public Integer getPointsRight(){ return pointsRight; }
     public Integer getPointsWrong(){ return pointsWrong; }
     public Integer getLifeDelta()  { return lifeDelta; }
+    public String getDifficulty() {
+        return difficulty;
+    }
+
 
     // Setters
     public void setText(String text) { this.text = text; }
@@ -55,4 +61,7 @@ public class Question {
     public void setPointsRight(Integer pointsRight){ this.pointsRight = pointsRight; }
     public void setPointsWrong(Integer pointsWrong){ this.pointsWrong = pointsWrong; }
     public void setLifeDelta(Integer lifeDelta) { this.lifeDelta = lifeDelta; }
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
+    }
 }

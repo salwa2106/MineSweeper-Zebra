@@ -67,6 +67,37 @@ public class SysData {
         return questions.get(rnd.nextInt(questions.size()));
     }
 
+    /** Returns a random question for the given difficulty ("easy","medium","hard","pro").
+     *  If none exist, falls back to any question (nextRandom()).
+     */
+    public static Question nextRandomByDifficulty(String difficulty) {
+        if (questions.isEmpty()) {
+            System.err.println("⚠ No questions loaded. Check CSV file!");
+            return null;
+        }
+        if (difficulty == null) {
+            return nextRandom();
+        }
+
+        String d = difficulty.trim().toLowerCase();
+        List<Question> filtered = new ArrayList<>();
+        for (Question q : questions) {
+            String qDiff = q.getDifficulty();
+            if (qDiff == null) qDiff = "easy";
+            if (qDiff.trim().toLowerCase().equals(d)) {
+                filtered.add(q);
+            }
+        }
+
+        if (filtered.isEmpty()) {
+            System.err.println("⚠ No questions for difficulty: " + difficulty + ". Falling back to any question.");
+            return nextRandom();
+        }
+
+        return filtered.get(rnd.nextInt(filtered.size()));
+    }
+
+    
     // -------------------- CSV LOADING --------------------
 
     public static void loadFromCsv() {
@@ -103,13 +134,24 @@ public class SysData {
                 String optB = parts[2];
                 String optC = parts[3];
                 String optD = parts[4];
-                char correct = parts[5].trim().isEmpty() ? 'A' : parts[5].trim().toUpperCase().charAt(0);
+                char correct = parts[5].trim().isEmpty()
+                        ? 'A'
+                        : parts[5].trim().toUpperCase().charAt(0);
 
-                Integer pr = parseIntOrNull(parts[6]);
-                Integer pw = parseIntOrNull(parts[7]);
+                Integer pr   = parseIntOrNull(parts[6]);
+                Integer pw   = parseIntOrNull(parts[7]);
                 Integer life = parseIntOrNull(parts[8]);
 
-                questions.add(new Question(text, optA, optB, optC, optD, correct, pr, pw, life));
+                // 🔹 NEW: difficulty column at index 9 (with default "easy" if missing)
+                String difficulty = "easy";
+                if (parts.length > 9 && parts[9] != null && !parts[9].trim().isEmpty()) {
+                    difficulty = parts[9].trim().toLowerCase();
+                }
+
+                // 🔹 Updated constructor to include difficulty
+                questions.add(new Question(text, optA, optB, optC, optD,
+                                           correct, pr, pw, life, difficulty));
+
             }
 
             System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
@@ -127,21 +169,27 @@ public class SysData {
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(f), StandardCharsets.UTF_8))) {
 
-            bw.write("Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta");
-            bw.newLine();
+        	bw.write("Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty");
+        	bw.newLine();
 
-            for (Question q : questions) {
-                bw.write(q.getText() + SEP);
-                bw.write(q.getOptA() + SEP);
-                bw.write(q.getOptB() + SEP);
-                bw.write(q.getOptC() + SEP);
-                bw.write(q.getOptD() + SEP);
-                bw.write(q.getCorrect() + SEP);
-                bw.write(nvl(q.getPointsRight()) + SEP);
-                bw.write(nvl(q.getPointsWrong()) + SEP);
-                bw.write(nvl(q.getLifeDelta()));
-                bw.newLine();
-            }
+        	for (Question q : questions) {
+        	    String diff = q.getDifficulty();
+        	    if (diff == null || diff.isBlank()) {
+        	        diff = "easy";
+        	    }
+
+        	    bw.write(q.getText() + SEP);
+        	    bw.write(q.getOptA() + SEP);
+        	    bw.write(q.getOptB() + SEP);
+        	    bw.write(q.getOptC() + SEP);
+        	    bw.write(q.getOptD() + SEP);
+        	    bw.write(q.getCorrect() + SEP);
+        	    bw.write(nvl(q.getPointsRight()) + SEP);
+        	    bw.write(nvl(q.getPointsWrong()) + SEP);
+        	    bw.write(nvl(q.getLifeDelta()) + SEP);
+        	    bw.write(diff);
+        	    bw.newLine();
+        	}
 
             System.out.println("✔ CSV saved successfully at " + f.getAbsolutePath());
 

@@ -31,7 +31,8 @@ public class QuestionsWizardPanel extends JPanel {
                 "Correct (A-D)",
                 "Points Right",
                 "Points Wrong",
-                "Life Δ"
+                "Life Δ",
+                "Difficulty"   // NEW column
         };
         model = new DefaultTableModel(cols, 0);
         table = new JTable(model);
@@ -50,8 +51,9 @@ public class QuestionsWizardPanel extends JPanel {
         buttons.add(saveBtn);
         add(buttons, BorderLayout.SOUTH);
 
+        // default new row: easy question with standard points/life
         addBtn.addActionListener(e ->
-                model.addRow(new Object[]{"", "", "", "", "", "A", 3, -1, 1}));
+                model.addRow(new Object[]{"", "", "", "", "", "A", 3, -1, 1, "easy"}));
 
         deleteBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
@@ -68,6 +70,9 @@ public class QuestionsWizardPanel extends JPanel {
         model.setRowCount(0);
         List<Question> list = SysData.getQuestions();
         for (Question q : list) {
+            String diff = q.getDifficulty();
+            if (diff == null || diff.isBlank()) diff = "easy";
+
             model.addRow(new Object[]{
                     q.getText(),
                     q.getOptA(),
@@ -77,7 +82,8 @@ public class QuestionsWizardPanel extends JPanel {
                     String.valueOf(q.getCorrect()),
                     q.getPointsRight(),
                     q.getPointsWrong(),
-                    q.getLifeDelta()
+                    q.getLifeDelta(),
+                    diff
             });
         }
     }
@@ -99,10 +105,15 @@ public class QuestionsWizardPanel extends JPanel {
 
             int ptsRight = parseInt(model.getValueAt(i, 6), 3);
             int ptsWrong = parseInt(model.getValueAt(i, 7), -1);
-            int lifeΔ    = parseInt(model.getValueAt(i, 8), 1);
+            int lifeDelta = parseInt(model.getValueAt(i, 8), 1);
 
+            Object diffObj = model.getValueAt(i, 9);
+            String difficulty = (diffObj == null) ? "easy" : diffObj.toString().trim();
+            if (difficulty.isEmpty()) difficulty = "easy";
+
+            // UPDATED constructor with difficulty
             Question q = new Question(text, a, b, c, d, correct,
-                                      ptsRight, ptsWrong, lifeΔ);
+                                      ptsRight, ptsWrong, lifeDelta, difficulty);
             SysData.addQuestion(q);
         }
 

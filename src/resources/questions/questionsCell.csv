@@ -1,11 +1,44 @@
-Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta
-What is the capital of France?,London,Berlin,Paris,Madrid,C,3,-1,1
-Which planet is known as the Red Planet?,Earth,Venus,Mars,Jupiter,C,3,-1,1
-How many legs does a spider have?,6,8,10,12,B,3,-1,1
-Who wrote 'Romeo and Juliet'?,Shakespeare,Dickens,Tolkien,Rowling,A,3,-1,1
-What is the largest ocean?,Indian,Atlantic,Arctic,Pacific,D,3,-1,1
-What is H2O commonly known as?,Oxygen,Hydrogen,Water,Helium,C,3,-1,1
-How many days are in a leap year?,364,365,366,367,C,3,-1,1
-Which animal is the king of the jungle?,Tiger,Lion,Elephant,Gorilla,B,3,-1,1
-What gas do plants inhale?,Oxygen,Carbon Dioxide,Nitrogen,Helium,B,3,-1,1
-How many continents are there?,5,6,7,8,C,3,-1,1
+Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty
+What is the capital of France?,London,Berlin,Paris,Madrid,C,3,-1,1,easy
+Which planet is known as the Red Planet?,Earth,Venus,Mars,Jupiter,C,3,-1,1,easy
+How many legs does a spider have?,6,8,10,12,B,3,-1,1,easy
+Who wrote 'Romeo and Juliet'?,Shakespeare,Dickens,Tolkien,Rowling,A,3,-1,1,medium
+What is the largest ocean?,Indian,Atlantic,Arctic,Pacific,D,3,-1,1,medium
+Who developed the theory of relativity?,Newton,Einstein,Bohr,Kepler,B,3,-1,1,hard
+What gas do plants absorb?,Oxygen,Hydrogen,Nitrogen,Carbon Dioxide,D,3,-1,1,medium
+What is the square root of 144?,10,11,12,14,C,3,-1,1,easy
+Which country hosted the 2016 Olympics?,China,UK,Brazil,Russia,C,3,-1,1,medium
+What is H2O commonly known as?,Salt,Water,Acid,Oxygen,B,3,-1,1,easy
+Who painted the Mona Lisa?,Van Gogh,Picasso,Da Vinci,Monet,C,3,-1,1,medium
+What is the hardest natural substance?,Gold,Iron,Diamond,Quartz,C,3,-1,1,medium
+Which element has the chemical symbol 'O'?,Oxygen,Gold,Helium,Silver,A,3,-1,1,easy
+Which algorithm has average O(n log n) complexity?,Bubble Sort,Merge Sort,Selection Sort,Linear Search,B,3,-1,1,pro
+What is the speed of light?,3,000 km/s,30,000 km/s,300,000 km/s,3,000,000 km/s,C,3,-1,1,hard
+What is the powerhouse of the cell?,Nucleus,Mitochondria,Ribosome,Chloroplast,B,3,-1,1,medium
+Which data structure works on FIFO?,Stack,Queue,Tree,Graph,B,3,-1,1,hard
+In which year did World War II end?,1940,1942,1945,1950,C,3,-1,1,medium
+What does CPU stand for?,Central Process Unit,Central Processing Unit,Computer Personal Unit,Core Power Unit,B,3,-1,1,easy
+What is the largest planet in our solar system?,Earth,Mars,Jupiter,Saturn,C,3,-1,1,easy
+What is the smallest prime number?,0,1,2,3,C,3,-1,1,easy
+How many continents are there?,5,6,7,8,C,3,-1,1,easy
+What color do you get when you mix red and white?,Pink,Blue,Green,Purple,A,3,-1,1,easy
+How many days are in a leap year?,364,365,366,367,C,3,-1,1,easy
+Which animal is known as the king of the jungle?,Elephant,Lion,Tiger,Leopard,B,3,-1,1,easy
+
+What is the boiling point of water?,50°C,80°C,100°C,120°C,C,3,-1,1,medium
+Which metal is liquid at room temperature?,Gold,Iron,Mercury,Silver,C,3,-1,1,medium
+Which organ pumps blood?,Liver,Brain,Heart,Lungs,C,3,-1,1,medium
+What is the chemical symbol for Sodium?,So,Na,N,Nm,B,3,-1,1,medium
+Which country invented pizza?,France,Germany,Italy,Spain,C,3,-1,1,medium
+
+What is the derivative of x²?,x,2x,x³,1,B,3,-1,1,hard
+What is the cube root of 27?,9,3,6,12,B,3,-1,1,hard
+Which gas makes up most of Earth’s atmosphere?,Oxygen,Nitrogen,Carbon Dioxide,Helium,B,3,-1,1,hard
+What is the hardest rock?,Granite,Diamond,Marble,Basalt,B,3,-1,1,hard
+What is the main language spoken in Brazil?,Spanish,Portuguese,French,English,B,3,-1,1,hard
+
+Which algorithm uses a divide-and-conquer strategy?,Insertion Sort,Bubble Sort,Merge Sort,Counting Sort,C,3,-1,1,pro
+Which data structure is used for DFS?,Queue,Stack,Heap,Tree,B,3,-1,1,pro
+What is Big-O of binary search?,O(n),O(log n),O(n²),O(1),B,3,-1,1,pro
+Which protocol secures web communication?,HTTP,FTP,SSH,HTTPS,D,3,-1,1,pro
+What is the time complexity of heap insertion?,O(log n),O(n),O(1),O(n log n),A,3,-1,1,pro
