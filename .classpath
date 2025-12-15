@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="C:/Users/basel/eclipse-workspace/Zebra2/MineSweeper-Zebra/src/lib/junit-jupiter-api-5.10.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/basel/eclipse-workspace/Zebra2/MineSweeper-Zebra/src/lib/junit-jupiter-engine.source_5.10.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/basel/eclipse-workspace/Zebra2/MineSweeper-Zebra/src/lib/junit-platform-console-standalone-1.10.0.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
