@@ -94,6 +94,8 @@
 	    private static final String SCREEN_MENU     = "MENU";
 	    private static final String SCREEN_NEW_GAME = "NEW_GAME";
 	    private static final String SCREEN_GAME     = "GAME";
+	    private static final String SCREEN_SETTINGS = "SETTINGS";
+	    private static final String SCREEN_QSETTINGS = "QSETTINGS";
 	
 	    private final JLabel turnLabel        = new JLabel("Turn: Player 1");
 	    private final JLabel sharedScoreLabel = new JLabel("Score: 0");
@@ -128,6 +130,9 @@
 	    // per-player counters
 	    private final int[] flagsCount    = {0, 0};
 	    private final int[] revealedCount = {0, 0};
+	    
+	    private final Controller.SettingsController settingsController = new Controller.SettingsController();
+
 	
 	    /* ------------------------------ DARK WOOD + MOSS THEME COLORS ------------------------------ */
 	
@@ -164,6 +169,8 @@
 	        root.setOpaque(false);
 	        root.add(buildMenu(), SCREEN_MENU);
 	        root.add(buildNewGame(), SCREEN_NEW_GAME);
+	        root.add(buildSettingsPage(), SCREEN_SETTINGS);
+	        root.add(buildQuestionSettingsPage(), SCREEN_QSETTINGS);
 	
 	        // default game board (easy) – will be rebuilt when "Start Game" is pressed
 	        gamePanel = buildGame(currentDifficulty.rows, currentDifficulty.cols);
@@ -451,6 +458,17 @@
 	        JButton resume    = createFrostedButton("Resume Game");
 	        JButton history   = createFrostedButton("History");
 	        JButton exit      = createFrostedButton("Exit");
+	        JButton settingsBtn = createFrostedButton("Settings");
+	        JButton qSettingsBtn = createFrostedButton("Question Settings");
+
+	        settingsBtn.setPreferredSize(bigBtn);
+	        qSettingsBtn.setPreferredSize(bigBtn);
+	        settingsBtn.setFont(bigMenuFont);
+	        qSettingsBtn.setFont(bigMenuFont);
+
+	        settingsBtn.addActionListener(e -> cards.show(root, SCREEN_SETTINGS));
+	        qSettingsBtn.addActionListener(e -> cards.show(root, SCREEN_QSETTINGS));
+
 
 	        newGame.setPreferredSize(bigBtn);
 	        resume.setPreferredSize(bigBtn);
