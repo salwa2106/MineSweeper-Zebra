@@ -9,7 +9,9 @@
 	import Model.SysData;
 	
 	import javax.swing.*;
-	import java.awt.*;
+import javax.swing.plaf.LayerUI;
+
+import java.awt.*;
 	import java.awt.event.*;
 	import java.util.List;
 	import java.util.Random;
@@ -117,6 +119,7 @@
 	    // whose turn?
 	    private boolean p1Turn = true;
 	    private final Random rng = new Random();
+
 	
 	    // Difficulty index (0=Easy,1=Medium,2=Hard) - kept for LIFE_OVERFLOW_POINTS usage
 	    private int difficultyIdx = 0;
@@ -147,40 +150,92 @@
 	    /* ------------------------------ CONSTRUCTOR ------------------------------ */
 	    public MineSweeperPrototype() {
 	        super("MineSweeper + Trivia — Forest Edition");
-	
+
 	        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignore) {}
-	
+
 	        setDefaultCloseOperation(EXIT_ON_CLOSE);
 	        setMinimumSize(new Dimension(1200, 800));
 	        setLocationRelativeTo(null);
 	        setExtendedState(JFrame.MAXIMIZED_BOTH);
-	
+
 	        // Load questions from CSV (used for question cells)
 	        SysData.init();
 	        loadHistoryFromCSV();
 
-	
 	        // Default difficulty / boards
 	        currentDifficulty = Difficulty.EASY;
 	        boards[0] = new Board(currentDifficulty);
 	        boards[1] = new Board(currentDifficulty);
-	
+
 	        // Build screens
 	        root.setOpaque(false);
 	        root.add(buildMenu(), SCREEN_MENU);
 	        root.add(buildNewGame(), SCREEN_NEW_GAME);
-	        root.add(buildSettingsPage(), SCREEN_SETTINGS);
-	        root.add(buildQuestionSettingsPage(), SCREEN_QSETTINGS);
-	
+	        
+	        // ❌ REMOVE THESE TWO LINES - settings are now popup windows
+	        // root.add(buildSettingsScreen(), SCREEN_SETTINGS);
+	        // root.add(buildQuestionSettingsScreen(), SCREEN_QSETTINGS);
+
 	        // default game board (easy) – will be rebuilt when "Start Game" is pressed
 	        gamePanel = buildGame(currentDifficulty.rows, currentDifficulty.cols);
 	        root.add(gamePanel, SCREEN_GAME);
-	
+
 	        BackgroundPanel forest = new BackgroundPanel(A_BG);
 	        forest.setLayout(new BorderLayout());
 	        forest.add(root, BorderLayout.CENTER);
 	        setContentPane(forest);
 	    }
+	    
+	    private JPanel buildSettingsScreen() {
+	        JPanel page = new JPanel(new BorderLayout());
+	        page.setOpaque(false);
+
+	        JPanel card = woodCard();
+	        card.add(woodHeader("Settings"), BorderLayout.NORTH);
+
+	        JButton back = woodButton("Back");
+	        back.addActionListener(e -> cards.show(root, SCREEN_MENU));
+
+	        JPanel center = new JPanel();
+	        center.setOpaque(false);
+	        center.add(new JLabel("TODO: Settings UI here"));
+
+	        card.add(center, BorderLayout.CENTER);
+
+	        JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER));
+	        south.setOpaque(false);
+	        south.add(back);
+	        card.add(south, BorderLayout.SOUTH);
+
+	        page.add(card, BorderLayout.CENTER);
+	        return wrapWithSlideFade(page);
+	    }
+
+	    private JPanel buildQuestionSettingsScreen() {
+	        JPanel page = new JPanel(new BorderLayout());
+	        page.setOpaque(false);
+
+	        JPanel card = woodCard();
+	        card.add(woodHeader("Question Settings"), BorderLayout.NORTH);
+
+	        JButton back = woodButton("Back");
+	        back.addActionListener(e -> cards.show(root, SCREEN_MENU));
+
+	        JPanel center = new JPanel();
+	        center.setOpaque(false);
+	        center.add(new JLabel("TODO: Question Settings UI here"));
+
+	        card.add(center, BorderLayout.CENTER);
+
+	        JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER));
+	        south.setOpaque(false);
+	        south.add(back);
+	        card.add(south, BorderLayout.SOUTH);
+
+	        page.add(card, BorderLayout.CENTER);
+	        return wrapWithSlideFade(page);
+	    }
+
 	
 	    /* ------------------------------ THEME HELPERS ------------------------------ */
 	
@@ -409,137 +464,129 @@
 	
 	
 	
-	    /* ------------------------------ MENU SCREEN ------------------------------ */
-	
+
 	    private JPanel buildMenu() {
 	        JPanel page = new JPanel(new BorderLayout());
 	        page.setOpaque(false);
 
-	        // ❄️ Snow background
 	        SnowPanel snow = new SnowPanel();
-	        snow.setLayout(new GridBagLayout()); // centers contents vertically & horizontally
+	        snow.setLayout(new GridBagLayout());
 
-	        // 🎄 Lights
 	        LightsOverlay lights = new LightsOverlay();
 
-	        // 🧊 Frosted glass (center card)
 	        JPanel glass = new JPanel() {
 	            @Override
 	            protected void paintComponent(Graphics g) {
 	                Float alpha = (Float) getClientProperty("fadeAlpha");
 	                float a = (alpha == null ? 1f : alpha);
-
 	                Graphics2D g2 = (Graphics2D) g.create();
 	                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
-
-	                // Frost background
+	                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 	                g2.setColor(new Color(20, 35, 35, 170));
 	                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
-
-	                // Frost border
 	                g2.setColor(new Color(160, 255, 255, 130));
 	                g2.setStroke(new BasicStroke(4f));
 	                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 36, 36);
-
 	                g2.dispose();
 	                super.paintComponent(g);
 	            }
 	        };
-
 	        glass.setOpaque(false);
-
-	        // 🔥 MAKE MENU BUTTONS BIGGER
-	        Dimension bigBtn = new Dimension(340, 70);
-	        Font bigMenuFont = new Font("Georgia", Font.BOLD, 26);
-
-
-	        // ❄️ ───────── MENU BUTTONS ───────── ❄️
-	        JButton newGame   = createFrostedButton("New Game");
-	        JButton resume    = createFrostedButton("Resume Game");
-	        JButton history   = createFrostedButton("History");
-	        JButton exit      = createFrostedButton("Exit");
-	        JButton settingsBtn = createFrostedButton("Settings");
-	        JButton qSettingsBtn = createFrostedButton("Question Settings");
-
-	        settingsBtn.setPreferredSize(bigBtn);
-	        qSettingsBtn.setPreferredSize(bigBtn);
-	        settingsBtn.setFont(bigMenuFont);
-	        qSettingsBtn.setFont(bigMenuFont);
-
-	        settingsBtn.addActionListener(e -> cards.show(root, SCREEN_SETTINGS));
-	        qSettingsBtn.addActionListener(e -> cards.show(root, SCREEN_QSETTINGS));
-
-
-	        newGame.setPreferredSize(bigBtn);
-	        resume.setPreferredSize(bigBtn);
-	        history.setPreferredSize(bigBtn);
-	        exit.setPreferredSize(bigBtn);
-
-	        newGame.setFont(bigMenuFont);
-	        resume.setFont(bigMenuFont);
-	        history.setFont(bigMenuFont);
-	        exit.setFont(bigMenuFont);
-
-
-	        // Actions
-	        newGame.addActionListener(e -> cards.show(root, SCREEN_NEW_GAME));
-
-	        // Resume works only if game is active
-	        resume.setEnabled(gameInProgress);
-	        resume.addActionListener(e -> cards.show(root, SCREEN_GAME));
-
-	        // NEW: History button on main menu
-	        history.addActionListener(e -> showHistory());
-
-	        exit.addActionListener(e -> {
-	            int r = JOptionPane.showConfirmDialog(this,
-	                    "Exit the game?", "Confirm",
-	                    JOptionPane.YES_NO_OPTION);
-	            if (r == JOptionPane.YES_OPTION) System.exit(0);
-	        });
+	        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
+	        glass.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
 
 	        // Title
 	        JLabel title = new JLabel("MINESWEEPER", SwingConstants.CENTER);
 	        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        title.setFont(new Font("Georgia", Font.BOLD, 50));
+	        title.setFont(new Font("Georgia", Font.BOLD, 48));
 	        title.setForeground(new Color(190, 255, 220));
 
 	        JLabel subtitle = new JLabel("+ Trivia — Forest Edition", SwingConstants.CENTER);
 	        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        subtitle.setFont(new Font("Georgia", Font.PLAIN, 24));
+	        subtitle.setFont(new Font("Georgia", Font.PLAIN, 22));
 	        subtitle.setForeground(new Color(170, 220, 200));
 
-	        // Layout inside frosted card
-	        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
-	        glass.setBorder(BorderFactory.createEmptyBorder(40, 60, 40, 60));
-
 	        glass.add(title);
-	        glass.add(Box.createVerticalStrut(10));
+	        glass.add(Box.createVerticalStrut(8));
 	        glass.add(subtitle);
 	        glass.add(Box.createVerticalStrut(40));
 
-	        glass.add(newGame);
-	        glass.add(Box.createVerticalStrut(20));
-	        glass.add(resume);
-	        glass.add(Box.createVerticalStrut(20));
-	        glass.add(history);   // <-- HISTORY BUTTON IN MAIN MENU
-	        glass.add(Box.createVerticalStrut(20));
-	        glass.add(exit);
+	        // ✅ Create ALL 6 buttons
+	        JButton newGame = createFrostedButton("New Game");
+	        JButton resume = createFrostedButton("Resume");
+	        JButton settings = createFrostedButton("Settings");
+	        JButton qSettings = createFrostedButton("Questions");
+	        JButton history = createFrostedButton("History");
+	        JButton exit = createFrostedButton("Exit");
 
-	        // Stack lights + frosted panel
+	        // ✅ Button size
+	        Dimension btnSize = new Dimension(200, 55);
+	        Font btnFont = new Font("Georgia", Font.BOLD, 20);
+	        
+	        for (JButton b : new JButton[]{newGame, resume, settings, qSettings, history, exit}) {
+	            b.setPreferredSize(btnSize);
+	            b.setMaximumSize(btnSize);
+	            b.setMinimumSize(btnSize);
+	            b.setFont(btnFont);
+	        }
+
+	        // ✅ Actions
+	        newGame.addActionListener(e -> cards.show(root, SCREEN_NEW_GAME));
+	        
+	        resume.setEnabled(gameInProgress);
+	        resume.addActionListener(e -> cards.show(root, SCREEN_GAME));
+	        
+	        // ✅ Settings opens popup window
+	        settings.addActionListener(e -> {
+	            SettingsFrame frame = new SettingsFrame(settingsController, () -> {
+	                System.out.println("Settings saved!");
+	            });
+	            frame.setVisible(true);
+	        });
+	        
+	        // ✅ Question Settings opens popup window
+	        qSettings.addActionListener(e -> {
+	            QuestionSettingsFrame frame = new QuestionSettingsFrame(settingsController, () -> {
+	                System.out.println("Question settings saved!");
+	            });
+	            frame.setVisible(true);
+	        });
+	        
+	        history.addActionListener(e -> showHistory());
+	        
+	        exit.addActionListener(e -> {
+	            int r = JOptionPane.showConfirmDialog(
+	                this, "Exit the game?", "Confirm", JOptionPane.YES_NO_OPTION
+	            );
+	            if (r == JOptionPane.YES_OPTION) System.exit(0);
+	        });
+
+	        // ✅ 2-COLUMN GRID for all 6 buttons (3 rows × 2 columns)
+	        JPanel buttonGrid = new JPanel(new GridLayout(3, 2, 15, 15));
+	        buttonGrid.setOpaque(false);
+	        buttonGrid.setMaximumSize(new Dimension(430, 200));
+	        buttonGrid.setAlignmentX(Component.CENTER_ALIGNMENT);
+	        
+	        buttonGrid.add(newGame);
+	        buttonGrid.add(resume);
+	        buttonGrid.add(settings);
+	        buttonGrid.add(qSettings);
+	        buttonGrid.add(history);
+	        buttonGrid.add(exit);
+
+	        glass.add(buttonGrid);
+
 	        JPanel stacked = new JPanel(new BorderLayout());
 	        stacked.setOpaque(false);
 	        stacked.add(lights, BorderLayout.NORTH);
 	        stacked.add(glass, BorderLayout.CENTER);
 
-	        // Center everything in the middle of the screen
 	        snow.add(stacked);
-
 	        page.add(snow, BorderLayout.CENTER);
 
-	        // Fade-in animation
 	        return wrapWithSlideFade(page);
 	    }
+
 
 	    private JButton createFrostedButton(String text) {
 	        JButton b = new JButton(text) {
@@ -547,35 +594,31 @@
 	            protected void paintComponent(Graphics g) {
 	                Graphics2D g2 = (Graphics2D) g;
 	                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-	
+
 	                Color base = new Color(45, 30, 20, 200);
 	                Color hover = new Color(60, 45, 30, 220);
-	
+
 	                Color bg = getModel().isRollover() ? hover : base;
 	                g2.setColor(bg);
 	                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-	
-	                // icy glow border
+
 	                g2.setColor(new Color(160, 255, 255, getModel().isRollover() ? 180 : 120));
 	                g2.setStroke(new BasicStroke(2f));
 	                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 16, 16);
-	
+
 	                super.paintComponent(g);
 	            }
 	        };
-	
+
 	        b.setForeground(new Color(200, 255, 230));
-	        b.setFont(new Font("Georgia", Font.BOLD, 18));
 	        b.setFocusPainted(false);
 	        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	        b.setBorderPainted(false);
 	        b.setContentAreaFilled(false);
 	        b.setOpaque(false);
-	        b.setPreferredSize(new Dimension(200, 48));
-	
 	        return b;
 	    }
-	    
+
 	
 	
 	    private void updateResumeButtonState(JButton resume) {
@@ -622,7 +665,7 @@
 	        };
 	
 	        glass.setOpaque(false);
-	        glass.setPreferredSize(new Dimension(520, 420));
+	        glass.setPreferredSize(new Dimension(400, 750));
 	        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
 	        glass.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
 	
@@ -2348,18 +2391,18 @@
 	}
 	
 	/* ------------------------------ GRADIENT PANEL CLASS ------------------------------ */
-	
+
 	class GradientPaintPanel extends JPanel {
-	
+
 	    private final Color top;
 	    private final Color bottom;
-	
+
 	    GradientPaintPanel(Color top, Color bottom) {
 	        this.top = top;
 	        this.bottom = bottom;
 	        setOpaque(false);
 	    }
-	
+
 	    @Override
 	    protected void paintComponent(Graphics g) {
 	        super.paintComponent(g);
@@ -2370,11 +2413,70 @@
 	                0, h, bottom
 	        ));
 	        g2.fillRect(0, 0, getWidth(), h);
-	    } 
-	    
-	    
-	    
-	
-	   
-	
+	    }
+	}
+
+	/* ------------------------------ BACKGROUND PANEL ------------------------------ */
+	class BackgroundPanel extends JPanel {
+	    private Image backgroundImage;
+
+	    public BackgroundPanel(String imagePath) {
+	        try {
+	            backgroundImage = new ImageIcon(imagePath).getImage();
+	        } catch (Exception e) {
+	            System.err.println("Could not load background: " + imagePath);
+	            e.printStackTrace();
+	        }
+	        setLayout(new BorderLayout());
+	    }
+
+	    @Override
+	    protected void paintComponent(Graphics g) {
+	        super.paintComponent(g);
+	        if (backgroundImage != null) {
+	            Graphics2D g2 = (Graphics2D) g;
+	            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, 
+	                              RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+	            g2.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+	        } else {
+	            // Fallback: dark green background
+	            g.setColor(new Color(20, 40, 30));
+	            g.fillRect(0, 0, getWidth(), getHeight());
+	        }
+	    }
+	}
+
+	/* ------------------------------ FADE IN ANIMATION ------------------------------ */
+	class FadeInLayerUI extends LayerUI<JComponent> {
+	    private float alpha = 0f;
+	    private Timer timer;
+
+	    public void startFade(JLayer<?> layer) {
+	        if (timer != null && timer.isRunning()) {
+	            timer.stop();
+	        }
+
+	        alpha = 0f;
+	        timer = new Timer(20, e -> {
+	            alpha += 0.05f;
+	            if (alpha >= 1f) {
+	                alpha = 1f;
+	                timer.stop();
+	            }
+	            layer.repaint();
+	        });
+	        timer.start();
+	    }
+
+	    @Override
+	    public void paint(Graphics g, JComponent c) {
+	        Graphics2D g2 = (Graphics2D) g.create();
+	        
+	        // Set fade alpha on component
+	        c.putClientProperty("fadeAlpha", alpha);
+	        
+	        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+	        super.paint(g2, c);
+	        g2.dispose();
+	    }
 	}
