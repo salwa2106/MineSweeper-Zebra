@@ -53,6 +53,33 @@ public class SettingsFrame extends JFrame {
         cbDiff.setSelectedIndex(switch (gs.getDefaultDifficulty()) {
             case EASY -> 0; case MEDIUM -> 1; case HARD -> 2;
         });
+        
+        cbDiff.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list, value, index, isSelected, cellHasFocus);
+
+                label.setOpaque(true); // ✅ critical
+
+                if (index == -1) {
+                    // ✅ this is the "selected item" shown in the combo field
+                    label.setBackground(Color.WHITE);              // matches what Windows paints
+                    label.setForeground(new Color(20, 35, 35));    // dark readable text
+                } else {
+                    // ✅ dropdown list items (your theme)
+                    label.setBackground(isSelected ? new Color(60, 90, 80)
+                                                   : new Color(30, 40, 35));
+                    label.setForeground(new Color(220, 255, 235));
+                }
+
+                return label;
+            }
+        });
+
 
         JSlider lives = new JSlider(1, 10, gs.getMaxSharedLives());
         styleSlider(lives);
@@ -149,8 +176,8 @@ public class SettingsFrame extends JFrame {
 
     private void styleCombo(JComboBox<String> cb) {
         cb.setFont(new Font("Georgia", Font.PLAIN, 15));
-        cb.setBackground(new Color(50, 40, 28));
-        cb.setForeground(new Color(240, 235, 220));
+        cb.setBackground(Color.WHITE);
+        cb.setForeground(new Color(20, 35, 35)); // ✅ readable on white
         cb.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
     }
 
