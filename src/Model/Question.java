@@ -4,7 +4,7 @@ package Model;
  * One trivia question loaded from the CSV.
  */
 public class Question {
-
+    private int    id;
     private String text;
     private String optA;
     private String optB;
@@ -18,21 +18,22 @@ public class Question {
 
     public Question() {}
 
-    public Question(String text, String optA, String optB, String optC, String optD,
-                    char correct, Integer pointsRight, Integer pointsWrong,
-                    Integer lifeDelta, String difficulty) {
+    public Question(int id, String text, String optA, String optB, String optC, String optD,
+            char correct, Integer pointsRight, Integer pointsWrong,
+            Integer lifeDelta, String difficulty) {
+this.id = id;
+this.text = text;
+this.optA = optA;
+this.optB = optB;
+this.optC = optC;
+this.optD = optD;
+this.correct = Character.toUpperCase(correct);
+this.pointsRight = pointsRight;
+this.pointsWrong = pointsWrong;
+this.lifeDelta = lifeDelta;
+this.difficulty = difficulty;
+}
 
-        this.text = text;
-        this.optA = optA;
-        this.optB = optB;
-        this.optC = optC;
-        this.optD = optD;
-        this.correct = Character.toUpperCase(correct);
-        this.pointsRight = pointsRight;
-        this.pointsWrong = pointsWrong;
-        this.lifeDelta = lifeDelta;
-        this.difficulty = difficulty;
-    }
 
     // Getters
     public String getText()        { return text; }
@@ -64,4 +65,12 @@ public class Question {
     public void setDifficulty(String difficulty) {
         this.difficulty = difficulty;
     }
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
 }

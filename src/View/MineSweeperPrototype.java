@@ -1,7 +1,8 @@
-	package View;
+package View;
 	
-	import Controller.GameController;
-	import Model.Board;
+import Controller.GameController;
+import Controller.QuestionsController;
+import Model.Board;
 	import Model.Cell;
 	import Model.CellType;
 	import Model.Difficulty;
@@ -135,6 +136,8 @@ import java.awt.*;
 	    private final int[] revealedCount = {0, 0};
 	    
 	    private final Controller.SettingsController settingsController = new Controller.SettingsController();
+	    private final QuestionsController questionsController = new QuestionsController();
+
 
 	
 	    /* ------------------------------ DARK WOOD + MOSS THEME COLORS ------------------------------ */
@@ -546,12 +549,12 @@ import java.awt.*;
 	        
 	        // ✅ Question Settings opens popup window
 	        qSettings.addActionListener(e -> {
-	            QuestionSettingsFrame frame = new QuestionSettingsFrame(settingsController, () -> {
-	                System.out.println("Question settings saved!");
-	            });
+	            QuestionsWizardFrame frame =
+	                    new QuestionsWizardFrame(questionsController, () -> this.setVisible(true));
 	            frame.setVisible(true);
+	            this.setVisible(false);
 	        });
-	        
+
 	        history.addActionListener(e -> showHistory());
 	        
 	        exit.addActionListener(e -> {

@@ -149,14 +149,26 @@ public class SysData {
                 }
 
                 // 🔹 Updated constructor to include difficulty
-                questions.add(new Question(text, optA, optB, optC, optD,
-                                           correct, pr, pw, life, difficulty));
+             // ✅ Build Question object correctly
+                Question q = new Question();
+                q.setText(text);
+                q.setOptA(optA);
+                q.setOptB(optB);
+                q.setOptC(optC);
+                q.setOptD(optD);
+                q.setCorrect(correct);
+                q.setPointsRight(pr);
+                q.setPointsWrong(pw);
+                q.setLifeDelta(life);
+                q.setDifficulty(difficulty);
 
-            }
+                // ✅ IMPORTANT: add to list
+                questions.add(q);
+
 
             System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
 
-        } catch (IOException e) {
+            }} catch (IOException e) {
             e.printStackTrace();
         }
     }
