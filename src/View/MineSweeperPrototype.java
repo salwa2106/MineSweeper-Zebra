@@ -14,7 +14,8 @@ import javax.swing.plaf.LayerUI;
 
 import java.awt.*;
 	import java.awt.event.*;
-	import java.util.List;
+import java.util.Arrays;
+import java.util.List;
 	import java.util.Random;
 	
 	/**
@@ -37,6 +38,8 @@ import java.awt.*;
 		private static final String A_HEART_EMPTY=fixPath("assets/forest/heart_empty.png");
 		private static final String A_BROWN     = fixPath("assets/forest/tile_brown.png");
 		private static final String A_QUESTION  = fixPath("assets/forest/question.png");
+		private static final String A_REFRESH   = fixPath("assets/forest/refresh.png");
+
 
 		  private final JComboBox<String> cbDifficulty =
 		            new JComboBox<>(new String[]{
@@ -1069,14 +1072,28 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        // add boards to frosted card
 	        glassBoard.add(boardsPanel, BorderLayout.CENTER);
 	
-	        // add lights on top
+	     // 🔄 Restart icon (centered above boards)
+	        JButton restartBtn = createRestartIconButton();
+
+	        JPanel restartHolder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 8));
+	        restartHolder.setOpaque(false);
+	        restartHolder.add(restartBtn);
+
+	        // combine restart + board
+	        JPanel centerStack = new JPanel(new BorderLayout());
+	        centerStack.setOpaque(false);
+	        centerStack.add(restartHolder, BorderLayout.NORTH);
+	        centerStack.add(glassBoard, BorderLayout.CENTER);
+
+	        // add lights on top (same as menu)
 	        JPanel layered = new JPanel(new BorderLayout());
 	        layered.setOpaque(false);
 	        layered.add(lights, BorderLayout.NORTH);
-	        layered.add(glassBoard, BorderLayout.CENTER);
-	
+	        layered.add(centerStack, BorderLayout.CENTER);
+
 	        // place inside snow background
 	        snow.add(layered);
+
 	
 	        // ❄ fade + slide
 	        JPanel finalPanel = wrapWithSlideFade(snow);
@@ -1584,6 +1601,17 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        bar.add(menu);
 	        bar.add(historyBtn);
 	        bar.add(space(24));
+	        
+	     // 🔄 Restart button (icon)
+	        JButton restart = woodButton("⟳");
+	        restart.setPreferredSize(new Dimension(44, 34));
+	        restart.setToolTipText("Restart Game");
+
+	        restart.addActionListener(e -> confirmRestartGame());
+
+	        bar.add(restart);
+	        bar.add(space(16));
+
 
 	        rightStats.setFont(new Font("Georgia", Font.BOLD, 14));
 	        rightStats.setForeground(TEXT_PRIMARY);
@@ -2393,6 +2421,73 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                    JOptionPane.ERROR_MESSAGE);
 	        }
 	    }
+	    
+	    private JButton createRestartIconButton() {
+
+	        // Load & scale refresh icon using YOUR asset system
+	        ImageIcon icon = loadIconFit(A_REFRESH, 28, 28);
+
+	        JButton btn = new JButton(icon);
+
+	        btn.setFocusPainted(false);
+	        btn.setBorderPainted(false);
+	        btn.setContentAreaFilled(false);
+	        btn.setOpaque(false);
+	        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+	        btn.setToolTipText("Restart Game");
+
+	        btn.addActionListener(e -> confirmRestartGame());
+
+	        return btn;
+	    }
+
+
+
+
+	    private void confirmRestartGame() {
+	        int r = JOptionPane.showConfirmDialog(
+	            this,
+	            "Are you sure you want to restart the game?\nCurrent progress will be lost.",
+	            "Restart Game",
+	            JOptionPane.YES_NO_OPTION,
+	            JOptionPane.WARNING_MESSAGE
+	        );
+
+	        if (r == JOptionPane.YES_OPTION) {
+	            restartGame();
+	        }
+	    }
+
+	    private void restartGame() {
+
+	        // reset shared stats
+	        sharedPoints = 0;
+
+	        // set lives back to max (use your existing logic)
+	        sharedLives = getMaxLivesLimit();
+
+	        // reset turn to Player 1
+	        p1Turn = true;
+
+	        // reset counters if you have them (only keep the ones that exist!)
+	        if (flagsCount != null && flagsCount.length >= 2) {
+	            flagsCount[0] = 0;
+	            flagsCount[1] = 0;
+	        }
+	        if (revealedCount != null && revealedCount.length >= 2) {
+	            revealedCount[0] = 0;
+	            revealedCount[1] = 0;
+	        }
+
+	        // update UI labels you DO have
+	        updateSharedScoreLabel();
+	        updateSharedHearts();
+	        refreshRightStats();
+
+	        // IMPORTANT: reuse your existing init logic so listeners work
+	        startGame();
+	    }
+
 
 
 
