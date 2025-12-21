@@ -617,34 +617,56 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	    private JButton createFrostedButton(String text) {
 	        JButton b = new JButton(text) {
+
 	            @Override
 	            protected void paintComponent(Graphics g) {
-	                Graphics2D g2 = (Graphics2D) g;
+	                Graphics2D g2 = (Graphics2D) g.create();
 	                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-	                Color base = new Color(45, 30, 20, 200);
-	                Color hover = new Color(60, 45, 30, 220);
+	                boolean hover = getModel().isRollover();
+	                boolean pressed = getModel().isPressed();
 
-	                Color bg = getModel().isRollover() ? hover : base;
+	                // --- Background ---
+	                Color base   = new Color(50, 80, 65, 220);
+	                Color hoverC = new Color(70, 115, 95, 235);
+	                Color pressC = new Color(40, 65, 55, 240);
+
+	                Color bg = pressed ? pressC : (hover ? hoverC : base);
 	                g2.setColor(bg);
 	                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
 
-	                g2.setColor(new Color(160, 255, 255, getModel().isRollover() ? 180 : 120));
+	                // --- Border Glow ---
 	                g2.setStroke(new BasicStroke(2f));
+	                g2.setColor(new Color(180, 255, 245, hover ? 220 : 140));
 	                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 16, 16);
 
-	                super.paintComponent(g);
+	                // --- Text (draw manually for clarity) ---
+	                FontMetrics fm = g2.getFontMetrics();
+	                int textW = fm.stringWidth(getText());
+	                int textH = fm.getAscent();
+
+	                g2.setColor(new Color(235, 255, 250));
+	                g2.drawString(
+	                        getText(),
+	                        (getWidth() - textW) / 2,
+	                        (getHeight() + textH) / 2 - 2
+	                );
+
+	                g2.dispose();
 	            }
 	        };
 
-	        b.setForeground(new Color(200, 255, 230));
+	        b.setFont(new Font("Georgia", Font.BOLD, 15));
 	        b.setFocusPainted(false);
 	        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	        b.setBorderPainted(false);
 	        b.setContentAreaFilled(false);
-	        b.setOpaque(false);
+	        b.setOpaque(true); // IMPORTANT
+	        b.setPreferredSize(new Dimension(140, 36));
+
 	        return b;
 	    }
+
 
 	
 	
@@ -663,132 +685,120 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	    /* ------------------------------ NEW GAME SCREEN ------------------------------ */
 	
-	    private JPanel buildNewGame() {
-	
-	        // OUTER PAGE (transparent)
-	        JPanel page = new JPanel(new BorderLayout());
-	        page.setOpaque(false);
-	
-	        // ❄ Snow behind the setup card
-	        SnowPanel snow = new SnowPanel();
-	        snow.setLayout(new GridBagLayout());
-	
-	        // 🎄 Christmas lights across top
-	        LightsOverlay lights = new LightsOverlay();
-	
-	        // 🧊 Frosted glass card (same style as menu)
-	        JPanel glass = new JPanel() {
-	            @Override
-	            protected void paintComponent(Graphics g) {
-	                Float alpha = (Float) getClientProperty("fadeAlpha");
-	                float a = (alpha == null ? 1f : alpha);
-	
-	                Graphics2D g2 = (Graphics2D) g.create();
-	                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
-	
-	                // Frost panel background
-	                g2.setColor(new Color(20, 35, 35, 170));
-	                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 35, 35);
-	
-	                // Frost border
-	                g2.setColor(new Color(160, 255, 255, 130));
-	                g2.setStroke(new BasicStroke(3f));
-	                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 30, 30);
-	
-	                g2.dispose();
-	                super.paintComponent(g);
-	            }
-	        };
-	
-	        glass.setOpaque(false);
-	        glass.setPreferredSize(new Dimension(400, 750));
-	        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
-	        glass.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
-	
-	        // ⭐ TITLE
-	        JLabel title = new JLabel("NEW GAME SETUP", SwingConstants.CENTER);
-	        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        title.setFont(new Font("Georgia", Font.BOLD, 38));
-	        title.setForeground(new Color(190, 255, 220));
-	
-	        glass.add(title);
-	        glass.add(Box.createVerticalStrut(25));
-	
-	        // -------------------------------
-	        // FORM (same fields but prettier)
-	        // -------------------------------
-	        JPanel form = new JPanel(new GridBagLayout());
-	        form.setOpaque(false);
-	        GridBagConstraints gc = new GridBagConstraints();
-	        gc.insets = new Insets(12, 12, 12, 12);
-	        gc.fill = GridBagConstraints.HORIZONTAL;
-	
-	        JLabel l1 = new JLabel("Player 1 Name:");
-	        JLabel l2 = new JLabel("Player 2 Name:");
-	        JLabel l3 = new JLabel("Difficulty:");
-	
-	        for (JLabel l : new JLabel[]{l1, l2, l3}) {
-	            l.setFont(new Font("Georgia", Font.BOLD, 17));
-	            l.setForeground(new Color(225, 245, 240));
-	        }
-	
-	        styleField(tfP1);
-	        styleField(tfP2);
-	
-	        cbDifficulty.setFont(new Font("Georgia", Font.PLAIN, 15));
-	        cbDifficulty.setBackground(new Color(50, 40, 28));
-	        cbDifficulty.setForeground(new Color(240, 235, 220));
-	        cbDifficulty.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
-	        
-            
+    private JPanel buildNewGame() {
 
+        // OUTER PAGE (transparent)
+        JPanel page = new JPanel(new BorderLayout());
+        page.setOpaque(false);
 
-	        // Layout
-	        gc.gridx = 0; gc.gridy = 0; gc.anchor = GridBagConstraints.LINE_END;
-	        form.add(l1, gc);
-	        gc.gridx = 1; gc.anchor = GridBagConstraints.LINE_START;
-	        form.add(tfP1, gc);
-	
-	        gc.gridx = 0; gc.gridy = 1; gc.anchor = GridBagConstraints.LINE_END;
-	        form.add(l2, gc);
-	        gc.gridx = 1; gc.anchor = GridBagConstraints.LINE_START;
-	        form.add(tfP2, gc);
-	
-	        gc.gridx = 0; gc.gridy = 2; gc.anchor = GridBagConstraints.LINE_END;
-	        form.add(l3, gc);
-	        gc.gridx = 1; gc.anchor = GridBagConstraints.LINE_START;
-	        form.add(cbDifficulty, gc);
-	
-	        // Buttons
-	        JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
-	        actions.setOpaque(false);
-	
-	        JButton back  = createFrostedButton("Back");
-	        JButton start = createFrostedButton("Start Game");
-	
-	        back.addActionListener(e -> showMenu());
-	        start.addActionListener(e -> startGame());
-	
-	        actions.add(start);
-	        actions.add(back);
-	
-	        gc.gridx = 0; gc.gridy = 3; gc.gridwidth = 2;
-	        form.add(actions, gc);
-	
-	        glass.add(form);
-	
-	        // Stack snow + glass card + lights
-	        JPanel stack = new JPanel(new BorderLayout());
-	        stack.setOpaque(false);
-	        stack.add(lights, BorderLayout.NORTH);
-	        stack.add(glass, BorderLayout.CENTER);
-	
-	        snow.add(stack);
-	
-	        // Apply fade animation
-	        return wrapWithSlideFade(snow);
-	    }
-	    
+        // ❄ Snow background
+        SnowPanel snow = new SnowPanel();
+        snow.setLayout(new GridBagLayout());
+
+        // 🎄 Lights (same usage as menu)
+        LightsOverlay lights = new LightsOverlay();
+
+        // 🧊 Glass card (IDENTICAL STYLE TO MENU)
+        JPanel glass = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Float alpha = (Float) getClientProperty("fadeAlpha");
+                float a = (alpha == null ? 1f : alpha);
+
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                g2.setColor(new Color(20, 35, 35, 170));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
+
+                g2.setColor(new Color(160, 255, 255, 130));
+                g2.setStroke(new BasicStroke(4f));
+                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 36, 36);
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+
+        glass.setOpaque(false);
+        glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
+        glass.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+        glass.setPreferredSize(new Dimension(420, 440));
+
+        // ⭐ TITLE (same hierarchy as menu)
+        JLabel title = new JLabel("NEW GAME", SwingConstants.CENTER);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setFont(new Font("Georgia", Font.BOLD, 42));
+        title.setForeground(new Color(190, 255, 220));
+
+        JLabel subtitle = new JLabel("Game Setup", SwingConstants.CENTER);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        subtitle.setFont(new Font("Georgia", Font.PLAIN, 20));
+        subtitle.setForeground(new Color(170, 220, 200));
+
+        glass.add(title);
+        glass.add(Box.createVerticalStrut(8));
+        glass.add(subtitle);
+        glass.add(Box.createVerticalStrut(30));
+
+        // ---------------- FORM (SIMPLIFIED & MENU-LIKE) ----------------
+        JPanel form = new JPanel();
+        form.setOpaque(false);
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+
+        form.add(createLabeledField("Player 1 Name", tfP1));
+        form.add(Box.createVerticalStrut(14));
+        form.add(createLabeledField("Player 2 Name", tfP2));
+        form.add(Box.createVerticalStrut(14));
+        form.add(createLabeledField("Difficulty", cbDifficulty));
+
+        glass.add(form);
+        glass.add(Box.createVerticalStrut(35));
+
+        // ---------------- BUTTONS (MATCH MENU) ----------------
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        actions.setOpaque(false);
+
+        JButton start = createFrostedButton("Start Game");
+        JButton back  = createFrostedButton("Back");
+
+        start.setPreferredSize(new Dimension(200, 55));
+        back.setPreferredSize(new Dimension(200, 55));
+
+        start.addActionListener(e -> startGame());
+        back.addActionListener(e -> showMenu());
+
+        actions.add(start);
+        actions.add(back);
+        glass.add(actions);
+
+        // ---------------- STACK LIKE MENU ----------------
+        JPanel stacked = new JPanel(new BorderLayout());
+        stacked.setOpaque(false);
+        stacked.add(lights, BorderLayout.NORTH);
+        stacked.add(glass, BorderLayout.CENTER);
+
+        snow.add(stacked);
+        page.add(snow, BorderLayout.CENTER);
+
+        return wrapWithSlideFade(page);
+    }
+
+    private JPanel createLabeledField(String label, JComponent field) {
+        JLabel l = new JLabel(label);
+        l.setFont(new Font("Georgia", Font.BOLD, 16));
+        l.setForeground(new Color(220, 240, 235));
+
+        JPanel row = new JPanel(new BorderLayout(12, 0));
+        row.setOpaque(false);
+        row.add(l, BorderLayout.WEST);
+        row.add(field, BorderLayout.CENTER);
+        row.setMaximumSize(new Dimension(360, 40));
+
+        return row;
+    }
+
 	    
 	
 	
@@ -1310,7 +1320,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                Light L = new Light();
 	                L.x = 80 + i*85;
 	                L.y = 20;
-	                L.radius = 8;
+	                L.radius = 5;
 	                L.base = pickColor();
 	                L.glowPhase = (float)(Math.random()*Math.PI*2);
 	                bulbs.add(L);
@@ -1344,7 +1354,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	
 	            for (Light L : bulbs) {
 	
-	                float glow = 0.4f + (float) Math.sin(L.glowPhase) * 0.4f;
+	            	float glow = 0.25f + (float) Math.sin(L.glowPhase) * 0.25f;
+
 	                Color glowColor = new Color(
 	                        (int)(L.base.getRed() * glow),
 	                        (int)(L.base.getGreen() * glow),
