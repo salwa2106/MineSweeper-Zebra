@@ -536,7 +536,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        JButton newGame = createFrostedButton("New Game");
 	        resumeButton = createFrostedButton("Resume");
 	        JButton settings = createFrostedButton("Settings");
-	        JButton qSettings = createFrostedButton("Questions");
+	       
 	        JButton history = createFrostedButton("History");
 	        JButton exit = createFrostedButton("Exit");
 
@@ -544,7 +544,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        Dimension btnSize = new Dimension(200, 55);
 	        Font btnFont = new Font("Georgia", Font.BOLD, 20);
 	        
-	        for (JButton b : new JButton[]{newGame, resumeButton, settings, qSettings, history, exit}) {
+	        for (JButton b : new JButton[]{newGame, resumeButton, settings, history, exit}) {
 	            b.setPreferredSize(btnSize);
 	            b.setMaximumSize(btnSize);
 	            b.setMinimumSize(btnSize);
@@ -578,12 +578,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        });
 	        
 	        // ✅ Question Settings opens popup window
-	        qSettings.addActionListener(e -> {
-	            QuestionsWizardFrame frame =
-	                    new QuestionsWizardFrame(questionsController, () -> this.setVisible(true));
-	            frame.setVisible(true);
-	            this.setVisible(false);
-	        });
+	        
 
 	        history.addActionListener(e -> showHistory());
 	        
@@ -603,7 +598,6 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        buttonGrid.add(newGame);
 	        buttonGrid.add(resumeButton);
 	        buttonGrid.add(settings);
-	        buttonGrid.add(qSettings);
 	        buttonGrid.add(history);
 	        buttonGrid.add(exit);
 
