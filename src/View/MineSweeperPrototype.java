@@ -66,7 +66,8 @@ import java.awt.*;
 
 	    private static final int TILE_SIZE = 44;
 	    private boolean gameInProgress = false;
-	    private JPanel[] boardWrappers = new JPanel[2];
+	        private javax.swing.JButton resumeButton;
+private JPanel[] boardWrappers = new JPanel[2];
 	    private TurnGlowPanel[] glowPanels = new TurnGlowPanel[2];
 	    private DimPanel[] dimPanels = new DimPanel[2];
 	    private java.util.List<String[]> gameHistory = new java.util.ArrayList<>();
@@ -197,7 +198,7 @@ import java.awt.*;
 	        card.add(woodHeader("Settings"), BorderLayout.NORTH);
 
 	        JButton back = woodButton("Back");
-	        back.addActionListener(e -> cards.show(root, SCREEN_MENU));
+	        back.addActionListener(e -> showMenu());
 
 	        JPanel center = new JPanel();
 	        center.setOpaque(false);
@@ -222,7 +223,7 @@ import java.awt.*;
 	        card.add(woodHeader("Question Settings"), BorderLayout.NORTH);
 
 	        JButton back = woodButton("Back");
-	        back.addActionListener(e -> cards.show(root, SCREEN_MENU));
+	        back.addActionListener(e -> showMenu());
 
 	        JPanel center = new JPanel();
 	        center.setOpaque(false);
@@ -516,7 +517,7 @@ import java.awt.*;
 
 	        // ✅ Create ALL 6 buttons
 	        JButton newGame = createFrostedButton("New Game");
-	        JButton resume = createFrostedButton("Resume");
+	        resumeButton = createFrostedButton("Resume");
 	        JButton settings = createFrostedButton("Settings");
 	        JButton qSettings = createFrostedButton("Questions");
 	        JButton history = createFrostedButton("History");
@@ -526,7 +527,7 @@ import java.awt.*;
 	        Dimension btnSize = new Dimension(200, 55);
 	        Font btnFont = new Font("Georgia", Font.BOLD, 20);
 	        
-	        for (JButton b : new JButton[]{newGame, resume, settings, qSettings, history, exit}) {
+	        for (JButton b : new JButton[]{newGame, resumeButton, settings, qSettings, history, exit}) {
 	            b.setPreferredSize(btnSize);
 	            b.setMaximumSize(btnSize);
 	            b.setMinimumSize(btnSize);
@@ -535,11 +536,10 @@ import java.awt.*;
 
 	        // ✅ Actions
 	        newGame.addActionListener(e -> cards.show(root, SCREEN_NEW_GAME));
-	        
-	        resume.setEnabled(gameInProgress);
-	        resume.addActionListener(e -> cards.show(root, SCREEN_GAME));
-	        
-	        // ✅ Settings opens popup window
+        updateResumeButtonState();
+        resumeButton.addActionListener(e -> cards.show(root, SCREEN_GAME));
+
+// ✅ Settings opens popup window
 	        settings.addActionListener(e -> {
 	            SettingsFrame frame = new SettingsFrame(settingsController, () -> {
 	                System.out.println("Settings saved!");
@@ -571,7 +571,7 @@ import java.awt.*;
 	        buttonGrid.setAlignmentX(Component.CENTER_ALIGNMENT);
 	        
 	        buttonGrid.add(newGame);
-	        buttonGrid.add(resume);
+	        buttonGrid.add(resumeButton);
 	        buttonGrid.add(settings);
 	        buttonGrid.add(qSettings);
 	        buttonGrid.add(history);
@@ -624,9 +624,18 @@ import java.awt.*;
 
 	
 	
-	    private void updateResumeButtonState(JButton resume) {
-	        resume.setEnabled(gameInProgress);
-	    }
+	    private void updateResumeButtonState() {
+        if (resumeButton != null) {
+            resumeButton.setEnabled(gameInProgress);
+        }
+    }
+
+    private void showMenu() {
+        updateResumeButtonState();
+        cards.show(root, SCREEN_MENU);
+        root.revalidate();
+        root.repaint();
+    }
 
 	    /* ------------------------------ NEW GAME SCREEN ------------------------------ */
 	
@@ -730,7 +739,7 @@ import java.awt.*;
 	        JButton back  = createFrostedButton("Back");
 	        JButton start = createFrostedButton("Start Game");
 	
-	        back.addActionListener(e -> cards.show(root, SCREEN_MENU));
+	        back.addActionListener(e -> showMenu());
 	        start.addActionListener(e -> startGame());
 	
 	        actions.add(start);
@@ -1498,7 +1507,7 @@ import java.awt.*;
 	        menu.setPreferredSize(new Dimension(90, 34));
 	
 	        help.addActionListener(e -> showHelp());
-	        menu.addActionListener(e -> cards.show(root, SCREEN_MENU));
+	        menu.addActionListener(e -> showMenu());
 	
 	        JLabel scoreTitle = new JLabel("Score:");
 	        scoreTitle.setForeground(TEXT_PRIMARY);
