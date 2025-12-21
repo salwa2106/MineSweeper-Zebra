@@ -167,9 +167,10 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        loadHistoryFromCSV();
 
 	        // Default difficulty / boards
-	        currentDifficulty = Difficulty.EASY;
+	        currentDifficulty = settingsController.getDefaultDifficulty();
 	        boards[0] = new Board(currentDifficulty);
 	        boards[1] = new Board(currentDifficulty);
+
 
 	        // Build screens
 	        root.setOpaque(false);
@@ -541,10 +542,21 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 // ✅ Settings opens popup window
 	        settings.addActionListener(e -> {
-	            SettingsFrame frame = new SettingsFrame(settingsController, () -> {
-	                System.out.println("Settings saved!");
-	            });
-	            frame.setVisible(true);
+	        	SettingsFrame frame = new SettingsFrame(settingsController, () -> {
+	        	    // apply settings after Save (so it affects UI immediately)
+	        	    cbDifficulty.setSelectedIndex(switch (settingsController.getDefaultDifficulty()) {
+	        	        case EASY -> 0;
+	        	        case MEDIUM -> 1;
+	        	        case HARD -> 2;
+	        	    });
+
+	        	    // if game is running, enforce max lives immediately
+	        	    int limit = getMaxLivesLimit();
+	        	    if (sharedLives > limit) sharedLives = limit;
+	        	    updateSharedHearts();
+	        	});
+	        	frame.setVisible(true);
+
 	        });
 	        
 	        // ✅ Question Settings opens popup window
@@ -715,7 +727,15 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        cbDifficulty.setBackground(new Color(50, 40, 28));
 	        cbDifficulty.setForeground(new Color(240, 235, 220));
 	        cbDifficulty.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
-	
+	        cbDifficulty.setSelectedIndex(
+	        	    switch (settingsController.getDefaultDifficulty()) {
+	        	        case EASY -> 0;
+	        	        case MEDIUM -> 1;
+	        	        case HARD -> 2;
+	        	    }
+	        	);
+
+
 	        // Layout
 	        gc.gridx = 0; gc.gridy = 0; gc.anchor = GridBagConstraints.LINE_END;
 	        form.add(l1, gc);
@@ -776,10 +796,11 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    }
 	
 	    /** This is the logic that used to be inline in the Start button. */
+	    /** This is the logic that used to be inline in the Start button. */
 	    private void startGame() {
 	        String p1 = tfP1.getText().trim();
 	        String p2 = tfP2.getText().trim();
-	
+
 	        if (p1.isEmpty() || p2.isEmpty()) {
 	            JOptionPane.showMessageDialog(this,
 	                    "Please enter both player names.",
@@ -787,41 +808,45 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                    JOptionPane.ERROR_MESSAGE);
 	            return;
 	        }
-	
+
+	        // This difficulty is ONLY for the current game (chosen in "New Game" screen)
 	        difficultyIdx = cbDifficulty.getSelectedIndex();
-	        switch (difficultyIdx) {
-	            case 0 -> currentDifficulty = Difficulty.EASY;
-	            case 1 -> currentDifficulty = Difficulty.MEDIUM;
-	            case 2 -> currentDifficulty = Difficulty.HARD;
-	            default -> currentDifficulty = Difficulty.EASY;
-	        }
-	
+	        currentDifficulty = switch (difficultyIdx) {
+	            case 0 -> Difficulty.EASY;
+	            case 1 -> Difficulty.MEDIUM;
+	            case 2 -> Difficulty.HARD;
+	            default -> Difficulty.EASY;
+	        };
+
+	        // ❌ IMPORTANT:
+	        // Do NOT save this as "default difficulty", otherwise it overrides SettingsFrame choice.
+	        // settingsController.setDefaultDifficulty(currentDifficulty);
+
 	        int rows = currentDifficulty.rows;
 	        int cols = currentDifficulty.cols;
-	
+
 	        boards[0] = new Board(currentDifficulty);
 	        boards[1] = new Board(currentDifficulty);
-	
+
 	        flagsCount[0] = flagsCount[1] = 0;
 	        revealedCount[0] = revealedCount[1] = 0;
 	        gameInProgress = true;
 
-	
 	        root.remove(gamePanel);
 	        gamePanel = buildGame(rows, cols);
 	        root.add(wrapWithSlideFade(gamePanel), SCREEN_GAME);
-	
-	
+
 	        sharedPoints = 0;
 	        updateSharedScoreLabel();
 	        resetSharedLives();
-	
+
 	        p1Turn = true;
 	        turnLabel.setText("Turn: " + p1);
 	        refreshRightStats();
-	
+
 	        cards.show(root, SCREEN_GAME);
 	    }
+
 	
 	    /* ------------------------------ BOARD SKINS ------------------------------ */
 	
@@ -1895,6 +1920,10 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        	    currentDifficulty.name(),
 	        	    String.valueOf(java.time.LocalDateTime.now())
 	        	});
+	        	if (settingsController.isAutoSaveHistory()) {
+	        	    exportHistoryToCSV();
+	        	}
+
 
 	        	JOptionPane.showMessageDialog(
 	                    this,
@@ -2220,7 +2249,14 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    /* ------------------------------ SHARED LIVES ------------------------------ */
 	
 	    private void updateSharedHearts() {
+	        int limit = getMaxLivesLimit();
+
 	        for (int i = 0; i < MAX_LIVES; i++) {
+	            // hide hearts above configured max
+	            sharedHearts[i].setVisible(i < limit);
+
+	            if (i >= limit) continue;
+
 	            boolean full = (i < sharedLives);
 	            ImageIcon icon = loadIconFit(full ? A_HEART_FULL : A_HEART_EMPTY, 22, 22);
 	            if (icon != null && icon.getIconWidth() > 0) {
@@ -2233,14 +2269,22 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            }
 	        }
 	    }
+
 	
+	    private int getMaxLivesLimit() {
+	        // respect Settings max lives, but never exceed MAX_LIVES (your UI array size)
+	        int limit = settingsController.getMaxSharedLives();
+	        return Math.max(1, Math.min(MAX_LIVES, limit));
+	    }
+
+	    
 	    private void resetSharedLives() {
-	        sharedLives = currentDifficulty.startLives;
-	        if (sharedLives > MAX_LIVES) {
-	            sharedLives = MAX_LIVES;
-	        }
+	        int limit = getMaxLivesLimit();
+	        sharedLives = Math.min(currentDifficulty.startLives, limit);
 	        updateSharedHearts();
 	    }
+
+
 	
 	    private void loseSharedLives(int n) {
 	        if (n <= 0) return;
@@ -2249,7 +2293,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        updateSharedHearts();
 
 	        if (sharedLives == 0) {
-	            // 🔹 1) Add this finished game to history (LOSE case)
+	            // 1) Add this finished game to history (LOSE case)
 	            String p1 = tfP1.getText().trim();
 	            String p2 = tfP2.getText().trim();
 	            gameHistory.add(new String[]{
@@ -2260,7 +2304,12 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                    String.valueOf(java.time.LocalDateTime.now())
 	            });
 
-	            // 🔹 2) Ask if they want a new game
+	            // ✅ 2) AUTO-SAVE if enabled in Settings
+	            if (settingsController.isAutoSaveHistory()) {
+	                exportHistoryToCSV();
+	            }
+
+	            // 3) Ask if they want a new game
 	            String message = "Game Over – Final Score: " + sharedPoints
 	                    + "\n\nDo you want to start a new game?";
 
@@ -2273,17 +2322,13 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            );
 
 	            if (choice == JOptionPane.YES_OPTION) {
-	                // Start a fresh game with same names + chosen difficulty
 	                startGame();
 	            } else {
-	                // Stay on the same screen, but game is over.
-	                // You already block further clicks with:
-	                // if (sharedLives == 0) return; in handleCellClick(...)
-	                // Optionally also:
-	                // gameInProgress = false;
+	                // optional: gameInProgress = false;
 	            }
 	        }
 	    }
+
 
 	
 	    private void exportHistoryToCSV() {
