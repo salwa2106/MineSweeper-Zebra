@@ -1602,15 +1602,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        bar.add(historyBtn);
 	        bar.add(space(24));
 	        
-	     // 🔄 Restart button (icon)
-	        JButton restart = woodButton("⟳");
-	        restart.setPreferredSize(new Dimension(44, 34));
-	        restart.setToolTipText("Restart Game");
-
-	        restart.addActionListener(e -> confirmRestartGame());
-
-	        bar.add(restart);
-	        bar.add(space(16));
+	  
 
 
 	        rightStats.setFont(new Font("Georgia", Font.BOLD, 14));
