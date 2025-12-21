@@ -113,23 +113,25 @@ public class SettingsFrame extends JFrame {
         JButton cancel = frostedButton("Cancel");
 
         save.addActionListener(e -> {
-            gs.setSoundEnabled(cbSound.isSelected());
-            gs.setAnimationsEnabled(cbAnim.isSelected());
-            gs.setAutoSaveHistory(cbAuto.isSelected());
-            gs.setMaxSharedLives(lives.getValue());
+            controller.setSoundEnabled(cbSound.isSelected());
+            controller.setAnimationsEnabled(cbAnim.isSelected());
+            controller.setAutoSaveHistory(cbAuto.isSelected());
+            controller.setMaxSharedLives(lives.getValue());
 
             Difficulty d = switch (cbDiff.getSelectedIndex()) {
                 case 1 -> Difficulty.MEDIUM;
                 case 2 -> Difficulty.HARD;
                 default -> Difficulty.EASY;
             };
-            gs.setDefaultDifficulty(d);
+            controller.setDefaultDifficulty(d);
 
             if (onSaved != null) onSaved.run();
             JOptionPane.showMessageDialog(this, "Settings saved.", "Settings",
                     JOptionPane.INFORMATION_MESSAGE);
             dispose();
         });
+
+
 
         cancel.addActionListener(e -> dispose());
 
