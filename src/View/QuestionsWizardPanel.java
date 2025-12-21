@@ -14,7 +14,11 @@ import java.util.List;
  */
 public class QuestionsWizardPanel extends JPanel {
 
-    private final DefaultTableModel model;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private final DefaultTableModel model;
     private final JTable table;
     private final Runnable onSave;
 

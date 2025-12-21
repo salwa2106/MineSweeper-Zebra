@@ -8,7 +8,11 @@ import java.awt.*;
  */
 public class SoftDropShadowBorder extends AbstractBorder {
 
-    private final Color shadowColor;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private final Color shadowColor;
     private final int shadowSize;
     private final float shadowOpacity;
     private final int arc;

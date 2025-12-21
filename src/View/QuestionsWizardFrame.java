@@ -17,7 +17,11 @@ import java.util.List;
  */
 public class QuestionsWizardFrame extends JFrame {
 
-    // ====== THEME ======
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	// ====== THEME ======
     private static final Color BTN_GREEN = new Color(40, 160, 90);
     private static final Color BTN_OLIVE = new Color(85, 110, 70);
     private static final Color BTN_RED   = new Color(185, 60, 60);

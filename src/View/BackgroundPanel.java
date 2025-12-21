@@ -10,7 +10,11 @@ import java.awt.*;
 public class BackgroundPanel extends JPanel {
 	
 
-    private Image background;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private Image background;
 
     public BackgroundPanel(String imagePath) {
         setLayout(new BorderLayout());
