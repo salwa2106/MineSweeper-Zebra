@@ -6,7 +6,11 @@ import java.awt.*;
 
 public class SlideFadeLayerUI extends LayerUI<JComponent> {
 
-    private float alpha = 0f;   // 0 → 1
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private float alpha = 0f;   // 0 → 1
     private float offset = 40f; // slide amount in px
     private Timer timer;
 

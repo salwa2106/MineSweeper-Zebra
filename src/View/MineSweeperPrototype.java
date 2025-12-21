@@ -25,7 +25,11 @@ import java.awt.*;
 	
 		
 		
-	    /* ------------------------------ FOREST ASSETS ------------------------------ */
+	    /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		/* ------------------------------ FOREST ASSETS ------------------------------ */
 		private static final String A_BG        = fixPath("assets/forest/forest_bg_1920x1080.png");
 		private static final String A_GRASS     = fixPath("assets/forest/tile_grass.png");
 		private static final String A_GRASS_H   = fixPath("assets/forest/tile_grass_hover.png");
@@ -272,72 +276,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        return header;
 	    }
 	    
-	    /* ------------------------------ FROSTED BLUE AURA (Turn Glow) ------------------------------ */
-	    class TurnGlowPanel extends JPanel {
-
-	        private float phase = 0f;
-	        private final Timer timer;
-	        private boolean active = false;
-
-	        TurnGlowPanel() {
-	            setOpaque(false);
-
-	            timer = new Timer(40, e -> {
-	                if (active) {
-	                    phase += 0.07f;
-	                    repaint();
-	                }
-	            });
-	            timer.start();
-	        }
-
-	        void setActive(boolean isActive) {
-	            active = isActive;
-	            repaint();
-	        }
-
-	        @Override
-	        protected void paintComponent(Graphics g) {
-	            if (!active) return;
-
-	            Graphics2D g2 = (Graphics2D) g.create();
-	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-	            float glow = 0.4f + (float)Math.sin(phase) * 0.4f;
-	            int alpha = (int)(160 * glow);
-
-	            Color icy = new Color(150, 255, 255, alpha);
-
-	            g2.setStroke(new BasicStroke(6f));
-	            g2.setColor(icy);
-	            g2.drawRoundRect(3, 3, getWidth() - 6, getHeight() - 6, 28, 28);
-
-	            g2.dispose();
-	        }
-	    }
-	    class DimPanel extends JPanel {
-
-	        private float alpha = 1f;
-
-	        DimPanel() {
-	            setOpaque(false);
-	        }
-
-	        void setDim(float value) {
-	            alpha = value;
-	            repaint();
-	        }
-
-	        @Override
-	        protected void paintComponent(Graphics g) {
-	            if (alpha >= 0.99f) return;
-
-	            Graphics2D g2 = (Graphics2D) g.create();
-	            g2.setColor(new Color(0, 0, 0, (int)(140 * (1f - alpha))));
-	            g2.fillRect(0, 0, getWidth(), getHeight());
-	            g2.dispose();
-	        }
-	    }
+	   
+	    
 
 	    private static String getHistoryPath() {
 	        try {
@@ -463,12 +403,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	
 	        return container;
 	    }
-	
-	
-	
-	
-	
-
+	    
 	    private JPanel buildMenu() {
 	        JPanel page = new JPanel(new BorderLayout());
 	        page.setOpaque(false);
@@ -1255,221 +1190,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            }
 	        }
 	    }
-	
-	 // 🎄 Animated Christmas lights overlay
-	    class LightsOverlay extends JPanel {
-	
-	        private static class Light {
-	            int x, y, radius;
-	            Color base;
-	            float glowPhase;
-	        }
-	
-	        private final java.util.List<Light> bulbs = new java.util.ArrayList<>();
-	        private final Timer timer;
-	
-	        LightsOverlay() {
-	            setOpaque(false);
-	
-	            // generate bulbs across top
-	            for (int i = 0; i < 18; i++) {
-	                Light L = new Light();
-	                L.x = 80 + i*85;
-	                L.y = 20;
-	                L.radius = 8;
-	                L.base = pickColor();
-	                L.glowPhase = (float)(Math.random()*Math.PI*2);
-	                bulbs.add(L);
-	            }
-	
-	            timer = new Timer(50, e -> {
-	                for (Light L : bulbs) {
-	                    L.glowPhase += 0.1f;
-	                }
-	                repaint();
-	            });
-	            timer.start();
-	        }
-	
-	        private Color pickColor() {
-	            Color[] c = {
-	                    new Color(255,75,75),
-	                    new Color(255,180,40),
-	                    new Color(120,200,255),
-	                    new Color(140,255,140)
-	            };
-	            return c[(int)(Math.random()*c.length)];
-	        }
-	
-	        @Override
-	        
-	        protected void paintComponent(Graphics g) {
-	            super.paintComponent(g);
-	            Graphics2D g2 = (Graphics2D) g;
-	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-	
-	            for (Light L : bulbs) {
-	
-	                float glow = 0.4f + (float) Math.sin(L.glowPhase) * 0.4f;
-	                Color glowColor = new Color(
-	                        (int)(L.base.getRed() * glow),
-	                        (int)(L.base.getGreen() * glow),
-	                        (int)(L.base.getBlue() * glow),
-	                        150
-	                );
-	
-	                // Glow halo
-	                g2.setColor(glowColor);
-	                g2.fillOval(L.x - L.radius * 2, L.y - L.radius * 2, L.radius * 4, L.radius * 4);
-	
-	                // Solid bulb
-	                g2.setColor(L.base);
-	                g2.fillOval(L.x - L.radius, L.y - L.radius, L.radius * 2, L.radius * 2);
-	            }
-	        }
-	
-	
-	    }
-	
-	
-	    
-	    
-	    private static class TileButton extends JButton {
-	
-	        private Image overlay;          // ← THIS is the variable you were missing
-	        private boolean revealedVisual = false;
-	        private float revealAlpha = 0f;   // fade animation %
-	        private boolean fading = false;
-	        private java.util.List<Point> snowOnTile = new java.util.ArrayList<>();
-	
-	
-	        TileButton(int size) {
-	            setPreferredSize(new Dimension(size, size));
-	            setMinimumSize(new Dimension(size, size));
-	            setMaximumSize(new Dimension(size, size));
 
-	            setMargin(new Insets(0,0,0,0));
-	            setContentAreaFilled(false);
-	            setOpaque(false);
-	            setBorder(null);
-	            setFocusPainted(false);
-
-	            setFont(new Font("Georgia", Font.BOLD, Math.max(12, size/3)));
-	            setForeground(Color.WHITE);
-	            setCursor(new Cursor(Cursor.HAND_CURSOR));
-	        }
-
-	
-	        void setOverlayIcon(ImageIcon icon) {
-	            overlay = (icon == null) ? null : icon.getImage();
-	            repaint();
-	        }
-	
-	        void setRevealedVisual(boolean r) {
-	            if (r && !revealedVisual) {
-	                revealedVisual = true;
-	
-	                // start fade animation
-	                fading = true;
-	                revealAlpha = 0f;
-	
-	                // add 3–5 snowflakes on tile
-	                snowOnTile.clear();
-	                int count = 3 + (int)(Math.random() * 3);
-	                for (int i = 0; i < count; i++) {
-	                    int x = (int)(Math.random() * getWidth());
-	                    int y = (int)(Math.random() * getHeight());
-	                    snowOnTile.add(new Point(x, y));
-	                }
-	
-	                // animation timer
-	                Timer t = new Timer(20, e -> {
-	                    revealAlpha += 0.08f;
-	                    if (revealAlpha >= 1f) {
-	                        revealAlpha = 1f;
-	                        fading = false;
-	                        ((Timer)e.getSource()).stop();
-	                    }
-	                    repaint();
-	                });
-	                t.start();
-	            } else {
-	                revealedVisual = r;
-	            }
-	        }
-	
-	
-	        boolean isRevealedVisual() {
-	            return revealedVisual;
-	        }
-	
-	        @Override
-	        protected void paintComponent(Graphics g) {
-	            Graphics2D g2 = (Graphics2D) g.create();
-	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-	
-	            // Draw transparent background
-	            g2.setComposite(AlphaComposite.SrcOver);
-	
-	            // ---------------------------------
-	            // 1) HIDDEN TILE (normal state)
-	            // ---------------------------------
-	            if (!revealedVisual) {
-	                super.paintComponent(g2);
-	
-	                // draw overlay icons (flag)
-	                if (overlay != null) {
-	                    int iconSize = 16;
-	                    int x = (getWidth() - iconSize) / 2;
-	                    int y = (getHeight() - iconSize) / 2;
-	                    g2.drawImage(overlay, x, y, iconSize, iconSize, this);
-	                }
-	
-	                g2.dispose();
-	                return;
-	            }
-	
-	            // ---------------------------------
-	            // 2) REVEALED TILE (fade animation)
-	            // ---------------------------------
-	            float alpha = fading ? revealAlpha : 1f;
-	            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-	
-	            // draw TEXT (numbers)
-	            super.paintComponent(g2);
-	
-	            // draw overlay icons (mine, spikes, question)
-	            if (overlay != null) {
-	                int iconSize = 16;
-	                int x = (getWidth() - iconSize) / 2;
-	                int y = (getHeight() - iconSize) / 2;
-	                g2.drawImage(overlay, x, y, iconSize, iconSize, this);
-	            }
-	
-	            // ---------------------------------
-	            // 3) GLOW OUTLINE
-	            // ---------------------------------
-	            g2.setComposite(AlphaComposite.SrcOver);
-	            g2.setStroke(new BasicStroke(2f));
-	            g2.setColor(new Color(0, 255, 255, 120)); // cyan glow
-	            g2.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, 6, 6);
-	
-	            // ---------------------------------
-	            // 4) SNOW ACCUMULATION
-	            // ---------------------------------
-	            g2.setColor(new Color(255,255,255,230));
-	            for (Point p : snowOnTile) {
-	                g2.fillOval(p.x, p.y, 3, 3);
-	            }
-	
-	            g2.dispose();
-	        }
-	    }
-	
-	
-	
-	
-	
 	    /* ------------------------------ HEADER BAR / SCORE / LIVES ------------------------------ */
 	
 	    private JPanel headerBarForGame() {
@@ -2402,32 +2123,3 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    }
 	}
 	
-	/* ------------------------------ GRADIENT PANEL CLASS ------------------------------ */
-
-	class GradientPaintPanel extends JPanel {
-
-	    private final Color top;
-	    private final Color bottom;
-
-	    GradientPaintPanel(Color top, Color bottom) {
-	        this.top = top;
-	        this.bottom = bottom;
-	        setOpaque(false);
-	    }
-
-	    @Override
-	    protected void paintComponent(Graphics g) {
-	        super.paintComponent(g);
-	        int h = getHeight();
-	        Graphics2D g2 = (Graphics2D) g;
-	        g2.setPaint(new GradientPaint(
-	                0, 0, top,
-	                0, h, bottom
-	        ));
-	        g2.fillRect(0, 0, getWidth(), h);
-	    }
-	}
-
-	/* ------------------------------ BACKGROUND PANEL ------------------------------ */
-	
-

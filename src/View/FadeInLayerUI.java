@@ -7,7 +7,11 @@ import java.awt.*;
 class FadeInLayerUI extends LayerUI<JComponent> {
 
 	
-    private float alpha = 0f;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private float alpha = 0f;
     private Timer timer;
 
     public void startFade(JLayer<?> layer) {

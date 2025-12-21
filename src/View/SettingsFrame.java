@@ -9,7 +9,11 @@ import java.awt.*;
 
 public class SettingsFrame extends JFrame {
 
-    // Theme colors (match your project)
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	// Theme colors (match your project)
     private static final Color TEXT = new Color(225, 245, 240);
     private static final Color BORDER = new Color(160, 255, 255, 130);
 

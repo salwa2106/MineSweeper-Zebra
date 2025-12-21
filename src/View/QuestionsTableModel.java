@@ -8,7 +8,12 @@ import java.util.List;
 
 public class QuestionsTableModel extends AbstractTableModel {
 
-    private final String[] cols = {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private final String[] cols = {
             "ID", "Question", "Difficulty", "A", "B", "C", "D",
             "Correct", "Right+", "Wrong-", "LifeΔ"
     };
