@@ -111,9 +111,24 @@ public class QuestionsWizardPanel extends JPanel {
             String difficulty = (diffObj == null) ? "easy" : diffObj.toString().trim();
             if (difficulty.isEmpty()) difficulty = "easy";
 
-            // UPDATED constructor with difficulty
-            Question q = new Question(text, a, b, c, d, correct,
-                                      ptsRight, ptsWrong, lifeDelta, difficulty);
+            int id = 0; // or your real id from CSV
+
+            Question q = new Question(
+                id,
+                text,
+                a,
+                b,
+                c,
+                d,
+                correct,        // ← already a char
+                ptsRight,
+                ptsWrong,
+                lifeDelta,
+                difficulty
+            );
+
+
+
             SysData.addQuestion(q);
         }
 
