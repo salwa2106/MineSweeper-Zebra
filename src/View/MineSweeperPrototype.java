@@ -38,6 +38,12 @@ import java.awt.*;
 		private static final String A_BROWN     = fixPath("assets/forest/tile_brown.png");
 		private static final String A_QUESTION  = fixPath("assets/forest/question.png");
 
+		  private final JComboBox<String> cbDifficulty =
+		            new JComboBox<>(new String[]{
+		                "Easy (9x9)",
+		                "Medium (13x13)",
+		                "Hard (16x16)"
+		            });
 	
 	    private static String fixPath(String rel) {
 	        try {
@@ -108,8 +114,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	
 	    private final JTextField tfP1 = new JTextField("Alice", 14);
 	    private final JTextField tfP2 = new JTextField("Bob", 14);
-	    private final JComboBox<String> cbDifficulty =
-	            new JComboBox<>(new String[]{"Easy (9x9)", "Medium (13x13)", "Hard (16x16)"});
+	 
 	
 	    private JPanel gamePanel;
 	
@@ -214,6 +219,17 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	        page.add(card, BorderLayout.CENTER);
 	        return wrapWithSlideFade(page);
+	    }
+	    private void syncDifficultyComboFromSettings() {
+	        Difficulty d = settingsController.getDefaultDifficulty();
+
+	        int idx = switch (d) {
+	            case EASY -> 0;
+	            case MEDIUM -> 1;
+	            case HARD -> 2;
+	        };
+
+	        cbDifficulty.setSelectedIndex(idx);
 	    }
 
 	    private JPanel buildQuestionSettingsScreen() {
@@ -554,6 +570,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        	    int limit = getMaxLivesLimit();
 	        	    if (sharedLives > limit) sharedLives = limit;
 	        	    updateSharedHearts();
+	                syncDifficultyComboFromSettings();
+
 	        	});
 	        	frame.setVisible(true);
 
@@ -727,13 +745,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        cbDifficulty.setBackground(new Color(50, 40, 28));
 	        cbDifficulty.setForeground(new Color(240, 235, 220));
 	        cbDifficulty.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
-	        cbDifficulty.setSelectedIndex(
-	        	    switch (settingsController.getDefaultDifficulty()) {
-	        	        case EASY -> 0;
-	        	        case MEDIUM -> 1;
-	        	        case HARD -> 2;
-	        	    }
-	        	);
+	        
+            
 
 
 	        // Layout
@@ -781,6 +794,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        // Apply fade animation
 	        return wrapWithSlideFade(snow);
 	    }
+	    
+	    
 	
 	
 	    private void styleField(JTextField tf) {
@@ -2471,7 +2486,10 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        ));
 	        g2.fillRect(0, 0, getWidth(), h);
 	    }
+	   
 	}
+
+	
 
 	/* ------------------------------ BACKGROUND PANEL ------------------------------ */
 	
