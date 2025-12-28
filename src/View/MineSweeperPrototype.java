@@ -1675,8 +1675,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	
 	    private void handleCellClick(int ownerIdx, int row, int col) {
 
-	    	
-	    	// ⛔ If the game is over (no lives), do nothing
+	        // ⛔ If the game is over (no lives), do nothing
 	        if (sharedLives == 0) {
 	            return;
 	        }
@@ -1684,7 +1683,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        // 🔒 ONLY CURRENT PLAYER MAY CLICK THEIR OWN BOARD
 	        int currentPlayer = p1Turn ? 0 : 1;
 	        if (ownerIdx != currentPlayer) {
-	            return; 
+	            return;
 	        }
 
 	        Board board = boards[ownerIdx];
@@ -1712,29 +1711,28 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            /* ----------------------------------------------------
 	               MINE
 	            ---------------------------------------------------- */
-	        case MINE -> {
-	            if (!cell.isRevealed()) {
-	                cell.reveal();
-	                updateButtonForCell(ownerIdx, cell);
-	                bumpRevealedForCurrentTurn();
+	            case MINE -> {
+	                if (!cell.isRevealed()) {
+	                    cell.reveal();
+	                    updateButtonForCell(ownerIdx, cell);
+	                    bumpRevealedForCurrentTurn();
 
-	                // ❌ POINT PENALTY FOR STEPPING ON A MINE
-	                bumpScore(-3);
+	                    // ❌ POINT PENALTY FOR STEPPING ON A MINE
+	                    bumpScore(-3);
 
-	                JOptionPane.showMessageDialog(
-	                        this,
-	                        "BOOM! Mine hit!\n(-3 points)",
-	                        "Mine",
-	                        JOptionPane.WARNING_MESSAGE
-	                );
+	                    JOptionPane.showMessageDialog(
+	                            this,
+	                            "BOOM! Mine hit!\n(-3 points)",
+	                            "Mine",
+	                            JOptionPane.WARNING_MESSAGE
+	                    );
 
-	                loseSharedLives(1);
-	                usedTurn = true;
+	                    loseSharedLives(1);
+	                    usedTurn = true;
 
-	                shakeWindow();
+	                    shakeWindow();
+	                }
 	            }
-	        }
-
 
 	            /* ----------------------------------------------------
 	               EMPTY → Cascade reveal
@@ -1790,62 +1788,52 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                // SECOND CLICK → Activation (does NOT change turn)
 	                if (cell.isRevealed()) {
 
-	                    // 1) Let user choose question difficulty
-	                    String[] diffOptions = {"Easy", "Medium", "Hard", "Pro"};
-	                    String selection = (String) JOptionPane.showInputDialog(
-	                            this,
-	                            "Choose question difficulty:",
-	                            "Question Difficulty",
-	                            JOptionPane.QUESTION_MESSAGE,
-	                            null,
-	                            diffOptions,
-	                            diffOptions[0]
-	                    );
+	                    int baseCost = getQuestionActivationCost();
 
-	                    // user pressed Cancel or closed dialog → do nothing
-	                    if (selection == null) {
+	                    // ⛔ Not enough points → block activation
+	                    if (sharedPoints < baseCost) {
+	                        JOptionPane.showMessageDialog(
+	                                this,
+	                                "Not enough points to activate this Question cell.\n" +
+	                                "Required: " + baseCost + " points.",
+	                                "Insufficient Points",
+	                                JOptionPane.WARNING_MESSAGE
+	                        );
 	                        break;
 	                    }
 
-	                    String diffKey = selection.toLowerCase(); // "easy"/"medium"/"hard"/"pro"
+	                    // 🎲 Random difficulty (NO user choice)
+	                    String[] diffOptions = {"easy", "medium", "hard", "pro"};
+	                    String diffKey = diffOptions[rng.nextInt(diffOptions.length)];
 
-	                    // 2) Get random question of that difficulty
 	                    Question q = SysData.nextRandomByDifficulty(diffKey);
 	                    if (q == null) {
 	                        JOptionPane.showMessageDialog(
 	                                this,
-	                                "No questions available for '" + selection + "' difficulty.",
+	                                "No questions available for difficulty: " + diffKey,
 	                                "Question Cell",
 	                                JOptionPane.WARNING_MESSAGE
 	                        );
 	                        break;
 	                    }
 
-	                    // 3) Ask for confirmation with cost (depends on game difficulty)
-	                    int baseCost = getQuestionActivationCost();
-
 	                    int choice = JOptionPane.showConfirmDialog(
 	                            this,
 	                            "This is a Question cell.\n" +
+	                            "Random difficulty: " + diffKey.toUpperCase() + "\n" +
 	                            "Using it costs " + baseCost + " points.\n" +
-	                            "Do you want to answer a " + selection.toLowerCase() + " question now?",
+	                            "Do you want to continue?",
 	                            "Question Cell",
 	                            JOptionPane.YES_NO_OPTION
 	                    );
 
 	                    if (choice == JOptionPane.YES_OPTION) {
-	                        // pay activation cost
 	                        bumpScore(-baseCost);
-
-	                        // show the chosen question, apply points/lives according to the spec
 	                        showQuestionDialog(q);
-
-	                        // mark cell as USED and update look
 	                        cell.setSpecialUsed(true);
 	                        updateButtonForCell(ownerIdx, cell);
 	                    }
 
-	                    // ✅ NO usedTurn = true here → same player keeps the turn
 	                    break;
 	                }
 
@@ -1860,7 +1848,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        cell.setRevealScored(true);
 	                    }
 
-	                    usedTurn = true;  // ✅ new cell opened → switch turn
+	                    usedTurn = true;
 	                }
 	            }
 
@@ -1877,8 +1865,20 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                // SECOND CLICK → Activation (does NOT change turn)
 	                if (cell.isRevealed()) {
 
-	                    int baseCost  = getQuestionActivationCost(); // same cost as Question cell
-	                    int magnitude = getSurpriseMagnitude();      // ±8 / ±12 / ±16 points
+	                    int baseCost  = getQuestionActivationCost();
+	                    int magnitude = getSurpriseMagnitude();
+
+	                    // ⛔ Not enough points → block activation
+	                    if (sharedPoints < baseCost) {
+	                        JOptionPane.showMessageDialog(
+	                                this,
+	                                "Not enough points to activate this Surprise cell.\n" +
+	                                "Required: " + baseCost + " points.",
+	                                "Insufficient Points",
+	                                JOptionPane.WARNING_MESSAGE
+	                        );
+	                        break;
+	                    }
 
 	                    int choice = JOptionPane.showConfirmDialog(
 	                            this,
@@ -1891,9 +1891,9 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                    );
 
 	                    if (choice == JOptionPane.YES_OPTION) {
-	                        bumpScore(-baseCost); // pay activation cost
+	                        bumpScore(-baseCost);
 
-	                        boolean good = rng.nextBoolean(); // 50% good, 50% bad
+	                        boolean good = rng.nextBoolean();
 
 	                        if (good) {
 	                            bumpScore(magnitude);
@@ -1916,10 +1916,9 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        }
 
 	                        cell.setSpecialUsed(true);
-	                        updateButtonForCell(ownerIdx, cell); // will show USED
+	                        updateButtonForCell(ownerIdx, cell);
 	                    }
 
-	                    // ✅ NO usedTurn = true here → same player keeps the turn
 	                    break;
 	                }
 
@@ -1934,7 +1933,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        cell.setRevealScored(true);
 	                    }
 
-	                    usedTurn = true;  // ✅ new cell opened → switch turn
+	                    usedTurn = true;
 	                }
 	            }
 
@@ -1952,20 +1951,19 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        // CHECK WIN CONDITION
 	        // ------------------------------------
 	        if (boards[ownerIdx].isAllSafeCellsRevealed()) {
-	        	String winner = (ownerIdx == 0 ? tfP1.getText().trim() : tfP2.getText().trim());
-	        	gameHistory.add(new String[]{
-	        	    winner,
-	        	    "Cleared Board",
-	        	    String.valueOf(sharedPoints),
-	        	    currentDifficulty.name(),
-	        	    String.valueOf(java.time.LocalDateTime.now())
-	        	});
-	        	if (settingsController.isAutoSaveHistory()) {
-	        	    exportHistoryToCSV();
-	        	}
+	            String winner = (ownerIdx == 0 ? tfP1.getText().trim() : tfP2.getText().trim());
+	            gameHistory.add(new String[]{
+	                    winner,
+	                    "Cleared Board",
+	                    String.valueOf(sharedPoints),
+	                    currentDifficulty.name(),
+	                    String.valueOf(java.time.LocalDateTime.now())
+	            });
+	            if (settingsController.isAutoSaveHistory()) {
+	                exportHistoryToCSV();
+	            }
 
-
-	        	JOptionPane.showMessageDialog(
+	            JOptionPane.showMessageDialog(
 	                    this,
 	                    "🎉 Congratulations! You cleared the board!",
 	                    "Board Cleared",
@@ -1977,6 +1975,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            }
 	        }
 	    }
+
 
 	
 	
