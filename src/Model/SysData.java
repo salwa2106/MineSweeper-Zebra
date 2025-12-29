@@ -10,6 +10,23 @@ public class SysData {
 	private static final String CSV_FILE = getCSVPath();
 	private static final String USERS_CSV_FILE = getUsersCSVPath();
 	
+	// -------------------- LOGIN SESSION --------------------
+	private static String currentUsername = null;
+	private static String currentRole = null;
+
+	public static String getCurrentUsername() { return currentUsername; }
+	public static String getCurrentRole() { return currentRole; }
+
+	public static boolean isAdmin() {
+	    return currentRole != null && currentRole.equalsIgnoreCase("ADMIN");
+	}
+
+	public static void logout() {
+	    currentUsername = null;
+	    currentRole = null;
+	}
+
+	
 	private static String getUsersCSVPath() {
 	    try {
 	        String path = SysData.class.getProtectionDomain()
@@ -107,8 +124,11 @@ public class SysData {
 	            System.out.println("CSV READ -> [" + u + "] [" + p + "]");
 
 	            if (u.equals(username) && p.equals(password)) {
+	                currentUsername = u;     // ✅ store who logged in
+	                currentRole = role;      // ✅ store role (ADMIN/USER)
 	                return role;
 	            }
+
 	        }
 
 	    } catch (IOException e) {

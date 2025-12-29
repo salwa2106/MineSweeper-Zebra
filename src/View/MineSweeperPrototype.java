@@ -542,6 +542,12 @@ private JPanel[] boardWrappers = new JPanel[2];
 	       
 	        JButton history = createFrostedButton("History");
 	        JButton exit = createFrostedButton("Exit");
+	        JButton questionsBtn = null;
+	        if (SysData.isAdmin()) {
+	            questionsBtn = createFrostedButton("Questions");
+	            questionsBtn.addActionListener(e -> openQuestionsWizard());
+	        }
+
 
 	        // ✅ Button size
 	        Dimension btnSize = new Dimension(200, 55);
@@ -597,12 +603,24 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        buttonGrid.setOpaque(false);
 	        buttonGrid.setMaximumSize(new Dimension(430, 200));
 	        buttonGrid.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        
-	        buttonGrid.add(newGame);
-	        buttonGrid.add(resumeButton);
-	        buttonGrid.add(settings);
-	        buttonGrid.add(history);
-	        buttonGrid.add(exit);
+
+	        if (SysData.isAdmin()) {
+	            // ✅ ADMIN: 6 buttons fill 3x2
+	            buttonGrid.add(newGame);
+	            buttonGrid.add(resumeButton);
+	            buttonGrid.add(settings);
+	            buttonGrid.add(questionsBtn);   // admin-only
+	            buttonGrid.add(history);
+	            buttonGrid.add(exit);
+	        } else {
+	            // ✅ USER: only 5 buttons + filler for the 6th slot
+	            buttonGrid.add(newGame);
+	            buttonGrid.add(resumeButton);
+	            buttonGrid.add(settings);
+	            buttonGrid.add(history);
+	            buttonGrid.add(exit);
+	            buttonGrid.add(Box.createGlue()); // filler
+	        }
 
 	        glass.add(buttonGrid);
 
@@ -616,6 +634,61 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	        return wrapWithSlideFade(page);
 	    }
+
+	    private void openQuestionsWizard() {
+	        if (!SysData.isAdmin()) {
+	            JOptionPane.showMessageDialog(this, "Admin only.");
+	            return;
+	        }
+
+	        // Your MineSweeperPrototype already has:
+	        // private final QuestionsController questionsController = new QuestionsController();
+	        // BUT your QuestionsWizardFrame expects a controller that matches its inner interface type.
+
+	        QuestionsWizardFrame.QuestionsController adapter =
+	                new QuestionsWizardFrame.QuestionsController() {
+	                    @Override
+	                    public java.util.List<Model.Question> getAllQuestions() {
+	                        return Model.SysData.getQuestions();
+	                    }
+
+	                    @Override
+	                    public void importFromCsv(java.io.File file) throws Exception {
+	                        questionsController.importFromCsv(file);
+	                    }
+
+	                    @Override
+	                    public void exportToCsv(java.io.File file) throws Exception {
+	                        questionsController.exportToCsv(file);
+	                    }
+
+	                    @Override
+	                    public void addQuestion(Model.Question q) throws Exception {
+	                        questionsController.addQuestion(q);
+	                    }
+
+	                    @Override
+	                    public void updateQuestionAtIndex(int index, Model.Question q) throws Exception {
+	                        questionsController.updateQuestionAtIndex(index, q);
+	                    }
+
+	                    @Override
+	                    public void deleteQuestionAtIndex(int index) throws Exception {
+	                        questionsController.deleteQuestionAtIndex(index);
+	                    }
+	                };
+
+	        // Open wizard (optional: hide game window while editing)
+	        // setVisible(false);
+
+	        QuestionsWizardFrame wizard = new QuestionsWizardFrame(adapter, () -> {
+	            // Called when user clicks Back in wizard
+	            // setVisible(true);
+	            Model.SysData.loadFromCsv(); // reload questions after changes
+	        });
+	        wizard.setVisible(true);
+	    }
+
 
 
 	    private JButton createFrostedButton(String text) {

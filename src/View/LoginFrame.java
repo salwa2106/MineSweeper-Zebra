@@ -14,6 +14,7 @@ public class LoginFrame extends JFrame {
             fixPath("assets/forest/forest_bg_1920x1080.png");
 
     public LoginFrame() {
+    	SysData.init();  // loads questions CSV once (safe even if called again)
         setTitle("MineSweeper + Trivia — Forest Edition");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
