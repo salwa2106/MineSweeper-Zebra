@@ -5,17 +5,13 @@ import java.awt.*;
 
 public class DimPanel extends JPanel {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private float alpha = 1f;
+    private float alpha = 1f;
 
-    public DimPanel() {
+    DimPanel() {
         setOpaque(false);
     }
 
-    public void setDim(float value) {
+    void setDim(float value) {
         alpha = value;
         repaint();
     }
@@ -25,7 +21,7 @@ public class DimPanel extends JPanel {
         if (alpha >= 0.99f) return;
 
         Graphics2D g2 = (Graphics2D) g.create();
-        g2.setColor(new Color(0, 0, 0, (int) (140 * (1f - alpha))));
+        g2.setColor(new Color(0, 0, 0, (int)(140 * (1f - alpha))));
         g2.fillRect(0, 0, getWidth(), getHeight());
         g2.dispose();
     }

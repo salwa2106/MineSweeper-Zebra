@@ -5,15 +5,12 @@ import java.awt.*;
 
 public class TurnGlowPanel extends JPanel {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private float phase = 0f;
+
+    private float phase = 0f;
     private final Timer timer;
     private boolean active = false;
 
-    public TurnGlowPanel() {
+    TurnGlowPanel() {
         setOpaque(false);
 
         timer = new Timer(40, e -> {
@@ -25,7 +22,7 @@ public class TurnGlowPanel extends JPanel {
         timer.start();
     }
 
-    public void setActive(boolean isActive) {
+    void setActive(boolean isActive) {
         active = isActive;
         repaint();
     }
@@ -37,8 +34,8 @@ public class TurnGlowPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        float glow = 0.4f + (float) Math.sin(phase) * 0.4f;
-        int alpha = (int) (160 * glow);
+        float glow = 0.4f + (float)Math.sin(phase) * 0.4f;
+        int alpha = (int)(160 * glow);
 
         Color icy = new Color(150, 255, 255, alpha);
 

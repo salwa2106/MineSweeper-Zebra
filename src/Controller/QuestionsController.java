@@ -34,6 +34,7 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
     @Override
     public void addQuestion(Question q) {
         questions.add(q);
+        syncToSysData();
     }
 
     @Override
@@ -41,6 +42,7 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         if (index < 0 || index >= questions.size())
             throw new IndexOutOfBoundsException("Invalid row index: " + index);
         questions.set(index, q);
+        syncToSysData();
     }
 
     @Override
@@ -48,12 +50,14 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         if (index < 0 || index >= questions.size())
             throw new IndexOutOfBoundsException("Invalid row index: " + index);
         questions.remove(index);
+        syncToSysData();
     }
 
     @Override
     public void importFromCsv(File file) throws Exception {
         try (InputStream in = new FileInputStream(file)) {
             importFromStream(in);
+            syncToSysData();
         }
     }
 
@@ -231,6 +235,15 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         result.add(cur.toString().trim());
         return result;
     }
+    
+    private void syncToSysData() {
+        Model.SysData.clear();
+        for (Question q : questions) {
+            Model.SysData.addQuestion(q);
+        }
+        Model.SysData.saveToCsv();
+    }
+
 
     private String csvEscape(String s) {
         if (s == null) return "";

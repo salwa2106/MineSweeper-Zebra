@@ -14,6 +14,7 @@ public class LoginFrame extends JFrame {
             fixPath("assets/forest/forest_bg_1920x1080.png");
 
     public LoginFrame() {
+    	
     	SysData.init();  // loads questions CSV once (safe even if called again)
         setTitle("MineSweeper + Trivia — Forest Edition");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -23,6 +24,7 @@ public class LoginFrame extends JFrame {
         setVisible(true);
 
         getRootPane().setDefaultButton(btnLogin);
+        
     }
 
     /* ---------------- PAGE ---------------- */
@@ -112,7 +114,12 @@ public class LoginFrame extends JFrame {
         wrapper.add(p);
         wrapper.add(Box.createVerticalStrut(15));
         wrapper.add(bottom);
-
+        btnLogin.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnLogin.putClientProperty("JButton.defaultButton", Boolean.FALSE);
+        btnSignup.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnSignup.putClientProperty("JButton.defaultButton", Boolean.FALSE);
+        btnExit.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnExit.putClientProperty("JButton.defaultButton", Boolean.FALSE);
         return wrapper;
     }
 

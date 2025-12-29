@@ -292,73 +292,6 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        return header;
 	    }
 	    
-	    /* ------------------------------ FROSTED BLUE AURA (Turn Glow) ------------------------------ */
-	    class TurnGlowPanel extends JPanel {
-
-	        private float phase = 0f;
-	        private final Timer timer;
-	        private boolean active = false;
-
-	        TurnGlowPanel() {
-	            setOpaque(false);
-
-	            timer = new Timer(40, e -> {
-	                if (active) {
-	                    phase += 0.07f;
-	                    repaint();
-	                }
-	            });
-	            timer.start();
-	        }
-
-	        void setActive(boolean isActive) {
-	            active = isActive;
-	            repaint();
-	        }
-
-	        @Override
-	        protected void paintComponent(Graphics g) {
-	            if (!active) return;
-
-	            Graphics2D g2 = (Graphics2D) g.create();
-	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-	            float glow = 0.4f + (float)Math.sin(phase) * 0.4f;
-	            int alpha = (int)(160 * glow);
-
-	            Color icy = new Color(150, 255, 255, alpha);
-
-	            g2.setStroke(new BasicStroke(6f));
-	            g2.setColor(icy);
-	            g2.drawRoundRect(3, 3, getWidth() - 6, getHeight() - 6, 28, 28);
-
-	            g2.dispose();
-	        }
-	    }
-	    class DimPanel extends JPanel {
-
-	        private float alpha = 1f;
-
-	        DimPanel() {
-	            setOpaque(false);
-	        }
-
-	        void setDim(float value) {
-	            alpha = value;
-	            repaint();
-	        }
-
-	        @Override
-	        protected void paintComponent(Graphics g) {
-	            if (alpha >= 0.99f) return;
-
-	            Graphics2D g2 = (Graphics2D) g.create();
-	            g2.setColor(new Color(0, 0, 0, (int)(140 * (1f - alpha))));
-	            g2.fillRect(0, 0, getWidth(), getHeight());
-	            g2.dispose();
-	        }
-	    }
-
 	    private static String getHistoryPath() {
 	        try {
 	            String path = SysData.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -593,9 +526,16 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        
 	        exit.addActionListener(e -> {
 	            int r = JOptionPane.showConfirmDialog(
-	                this, "Exit the game?", "Confirm", JOptionPane.YES_NO_OPTION
+	                this,
+	                "Return to login screen?",
+	                "Confirm",
+	                JOptionPane.YES_NO_OPTION
 	            );
-	            if (r == JOptionPane.YES_OPTION) System.exit(0);
+
+	            if (r == JOptionPane.YES_OPTION) {
+	                dispose();          // close MineSweeperPrototype
+	                new LoginFrame();   // go back to login
+	            }
 	        });
 
 	        // ✅ 2-COLUMN GRID for all 6 buttons (3 rows × 2 columns)
@@ -1315,82 +1255,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    /* ------------------------------ WIDGETS ------------------------------ */
 	
 
-	 // 🎄 Animated Christmas lights overlay
-	    class LightsOverlay extends JPanel {
-	
-	        private static class Light {
-	            int x, y, radius;
-	            Color base;
-	            float glowPhase;
-	        }
-	
-	        private final java.util.List<Light> bulbs = new java.util.ArrayList<>();
-	        private final Timer timer;
-	
-	        LightsOverlay() {
-	            setOpaque(false);
-	
-	            // generate bulbs across top
-	            for (int i = 0; i < 18; i++) {
-	                Light L = new Light();
-	                L.x = 80 + i*85;
-	                L.y = 20;
-	                L.radius = 5;
-	                L.base = pickColor();
-	                L.glowPhase = (float)(Math.random()*Math.PI*2);
-	                bulbs.add(L);
-	            }
-	
-	            timer = new Timer(50, e -> {
-	                for (Light L : bulbs) {
-	                    L.glowPhase += 0.1f;
-	                }
-	                repaint();
-	            });
-	            timer.start();
-	        }
-	
-	        private Color pickColor() {
-	            Color[] c = {
-	                    new Color(255,75,75),
-	                    new Color(255,180,40),
-	                    new Color(120,200,255),
-	                    new Color(140,255,140)
-	            };
-	            return c[(int)(Math.random()*c.length)];
-	        }
-	
-	        @Override
-	        
-	        protected void paintComponent(Graphics g) {
-	            super.paintComponent(g);
-	            Graphics2D g2 = (Graphics2D) g;
-	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-	
-	            for (Light L : bulbs) {
-	
-	            	float glow = 0.25f + (float) Math.sin(L.glowPhase) * 0.25f;
-
-	                Color glowColor = new Color(
-	                        (int)(L.base.getRed() * glow),
-	                        (int)(L.base.getGreen() * glow),
-	                        (int)(L.base.getBlue() * glow),
-	                        150
-	                );
-	
-	                // Glow halo
-	                g2.setColor(glowColor);
-	                g2.fillOval(L.x - L.radius * 2, L.y - L.radius * 2, L.radius * 4, L.radius * 4);
-	
-	                // Solid bulb
-	                g2.setColor(L.base);
-	                g2.fillOval(L.x - L.radius, L.y - L.radius, L.radius * 2, L.radius * 2);
-	            }
-	        }
-	
-	
-	    }
-	
+	 
 	
 	    
 	    
@@ -2550,8 +2415,3 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        });
 	    }
 	}
-	
-
-
-	
-

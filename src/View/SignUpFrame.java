@@ -53,6 +53,7 @@ public class SignUpFrame extends JFrame {
 
         bg.add(stacked);
         page.add(bg, BorderLayout.CENTER);
+        
 
         return wrapWithSlideFade(page);
     }
@@ -142,6 +143,12 @@ public class SignUpFrame extends JFrame {
         btnExit.addActionListener(e -> System.exit(0));
 
         wrapper.add(bottom);
+        btnCreate.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnCreate.putClientProperty("JButton.defaultButton", Boolean.FALSE);
+        btnBack.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnBack.putClientProperty("JButton.defaultButton", Boolean.FALSE);
+        btnExit.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        btnExit.putClientProperty("JButton.defaultButton", Boolean.FALSE);
 
         return wrapper;
     }
