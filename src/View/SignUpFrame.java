@@ -35,8 +35,6 @@ public class SignUpFrame extends JFrame {
         BackgroundPanel bg = new BackgroundPanel(A_BG);
         bg.setLayout(new GridBagLayout());
 
-        LightsOverlay lights = new LightsOverlay();
-
         JPanel glass = createGlass();
         glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
 
@@ -51,7 +49,6 @@ public class SignUpFrame extends JFrame {
 
         JPanel stacked = new JPanel(new BorderLayout());
         stacked.setOpaque(false);
-        stacked.add(lights, BorderLayout.NORTH);
         stacked.add(glass, BorderLayout.CENTER);
 
         bg.add(stacked);
@@ -59,7 +56,7 @@ public class SignUpFrame extends JFrame {
 
         return wrapWithSlideFade(page);
     }
-    
+
     private JPanel wrapWithSlideFade(JComponent comp) {
         FadeInLayerUI ui = new FadeInLayerUI();
         JLayer<JComponent> layer = new JLayer<>(comp, ui);
@@ -115,7 +112,6 @@ public class SignUpFrame extends JFrame {
         p.add(createLabel("Password"));
         p.add(tfPass);
 
-
         p.add(createLabel("Confirm Password"));
         p.add(tfConfirm);
 
@@ -149,10 +145,10 @@ public class SignUpFrame extends JFrame {
 
         return wrapper;
     }
-    
+
     private JLabel createLabel(String text) {
         JLabel l = new JLabel(text);
-        l.setForeground(new Color(200, 255, 235)); // bright mint
+        l.setForeground(new Color(200, 255, 235));
         l.setFont(new Font("Georgia", Font.BOLD, 16));
         return l;
     }
@@ -188,15 +184,13 @@ public class SignUpFrame extends JFrame {
         dispose();
         new LoginFrame();
     }
-
-    /* ================= HELPERS ================= */
-
+    
     private void togglePassword() {
         char echo = cbShowPass.isSelected() ? (char) 0 : '•';
         tfPass.setEchoChar(echo);
         tfConfirm.setEchoChar(echo);
     }
-
+    
     private void updateStrength() {
         String p = new String(tfPass.getPassword());
         int score = 0;
@@ -214,7 +208,7 @@ public class SignUpFrame extends JFrame {
         );
     }
 
-    /* ================= UI SHARED ================= */
+    /* ================= UI HELPERS ================= */
 
     private JPanel createGlass() {
         JPanel glass = new JPanel() {
@@ -238,6 +232,7 @@ public class SignUpFrame extends JFrame {
 
         glass.setOpaque(false);
         glass.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+        glass.setPreferredSize(new Dimension(650, 500));
         return glass;
     }
 
@@ -282,6 +277,4 @@ public class SignUpFrame extends JFrame {
             return rel;
         }
     }
-    
-    
 }

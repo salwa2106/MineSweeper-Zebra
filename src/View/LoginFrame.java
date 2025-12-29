@@ -33,8 +33,6 @@ public class LoginFrame extends JFrame {
         BackgroundPanel bg = new BackgroundPanel(A_BG);
         bg.setLayout(new GridBagLayout());
 
-        LightsOverlay lights = new LightsOverlay();
-
         JPanel glass = createGlass();
         glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
 
@@ -49,7 +47,6 @@ public class LoginFrame extends JFrame {
 
         JPanel stacked = new JPanel(new BorderLayout());
         stacked.setOpaque(false);
-        stacked.add(lights, BorderLayout.NORTH);
         stacked.add(glass, BorderLayout.CENTER);
 
         bg.add(stacked);
@@ -57,7 +54,7 @@ public class LoginFrame extends JFrame {
 
         return wrapWithSlideFade(page);
     }
-    
+
     private JPanel wrapWithSlideFade(JComponent comp) {
         FadeInLayerUI ui = new FadeInLayerUI();
         JLayer<JComponent> layer = new JLayer<>(comp, ui);
@@ -117,9 +114,10 @@ public class LoginFrame extends JFrame {
 
         return wrapper;
     }
+
     private JLabel createLabel(String text) {
         JLabel l = new JLabel(text);
-        l.setForeground(new Color(200, 255, 235)); // bright mint
+        l.setForeground(new Color(200, 255, 235));
         l.setFont(new Font("Georgia", Font.BOLD, 16));
         return l;
     }
@@ -165,6 +163,7 @@ public class LoginFrame extends JFrame {
 
         glass.setOpaque(false);
         glass.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+        glass.setPreferredSize(new Dimension(600, 420));
         return glass;
     }
 
@@ -172,8 +171,8 @@ public class LoginFrame extends JFrame {
 
     private void styleField(JTextField f) {
         f.setOpaque(true);
-        f.setBackground(new Color(30, 55, 50, 200)); // frosted dark
-        f.setForeground(new Color(220, 255, 240));  // text color
+        f.setBackground(new Color(30, 55, 50, 200));
+        f.setForeground(new Color(220, 255, 240));
         f.setCaretColor(Color.WHITE);
 
         f.setFont(new Font("Segoe UI", Font.PLAIN, 16));
@@ -182,7 +181,6 @@ public class LoginFrame extends JFrame {
                 BorderFactory.createEmptyBorder(6, 10, 6, 10)
         ));
     }
-
 
     private JButton createFrostedButton(String text) {
         JButton b = new JButton(text);
@@ -194,8 +192,6 @@ public class LoginFrame extends JFrame {
                 new Color(160, 255, 220), 2));
         return b;
     }
-
-    /* ---------------- PATH ---------------- */
 
     private static String fixPath(String rel) {
         try {
