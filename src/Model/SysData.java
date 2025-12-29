@@ -8,6 +8,158 @@ public class SysData {
 
     // EXACT PATH to your CSV file
 	private static final String CSV_FILE = getCSVPath();
+	private static final String USERS_CSV_FILE = getUsersCSVPath();
+	
+	private static String getUsersCSVPath() {
+	    try {
+	        String path = SysData.class.getProtectionDomain()
+	                .getCodeSource().getLocation().getPath();
+	        String decoded = java.net.URLDecoder.decode(path, "UTF-8");
+
+	        // remove /bin if running in Eclipse
+	        if (decoded.contains("/bin")) {
+	            decoded = decoded.substring(0, decoded.indexOf("/bin"));
+	            System.out.println("Users CSV path (Dev): " + decoded + "/src/resources/users/users.csv");
+	            return decoded + "/src/resources/users/users.csv";
+	        }
+
+	        // running from JAR
+	        decoded = decoded.substring(0, decoded.lastIndexOf("/"));
+	        System.out.println("Users CSV path (JAR): " + decoded + "/resources/users/users.csv");
+	        return decoded + "/resources/users/users.csv";
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+	
+	public static boolean addUser(String username, String password, String role) {
+
+	    if (username == null || password == null || role == null) return false;
+
+	    try {
+	        File file = new File(USERS_CSV_FILE);
+
+	        // create file if not exists
+	        if (!file.exists()) {
+	            file.getParentFile().mkdirs();
+	            file.createNewFile();
+	        }
+
+	        // check if user already exists
+	        if (userExists(username)) {
+	            return false;
+	        }
+
+	        try (BufferedWriter bw = new BufferedWriter(
+	                new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8))) {
+
+	            bw.write(username + "," + password + "," + role.toUpperCase());
+	            bw.newLine();
+	        }
+
+	        return true;
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+
+	public static String authenticateUser(String username, String password) {
+
+	    if (username == null || password == null) return null;
+
+	    username = username.trim();
+	    password = password.trim();
+
+	    File file = new File(USERS_CSV_FILE);
+	    if (!file.exists()) {
+	        System.out.println("❌ users.csv not found at: " + file.getAbsolutePath());
+	        return null;
+	    }
+
+	    try (BufferedReader br = new BufferedReader(
+	            new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+
+	        String line;
+	        while ((line = br.readLine()) != null) {
+
+	            if (line.trim().isEmpty()) continue;
+
+	            // ✅ remove BOM if exists (CRITICAL FIX)
+	            line = line.replace("\uFEFF", "");
+
+	            // ✅ skip header
+	            String lower = line.toLowerCase();
+	            if (lower.startsWith("username") && lower.contains("password")) {
+	                continue;
+	            }
+
+	            String[] parts = line.split(",", -1);
+	            if (parts.length < 3) continue;
+
+	            String u = parts[0].trim();
+	            String p = parts[1].trim();
+	            String role = parts[2].trim();
+
+	            System.out.println("CSV READ -> [" + u + "] [" + p + "]");
+
+	            if (u.equals(username) && p.equals(password)) {
+	                return role;
+	            }
+	        }
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+
+	    return null;
+	}
+
+
+
+	public static boolean userExists(String username) {
+
+	    if (username == null) return false;
+	    username = username.trim();
+
+	    File file = new File(USERS_CSV_FILE);
+	    if (!file.exists()) return false;
+
+	    try (BufferedReader br = new BufferedReader(
+	            new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+
+	        String line;
+	        while ((line = br.readLine()) != null) {
+
+	            if (line.trim().isEmpty()) continue;
+
+	            line = line.replace("\uFEFF", "");
+
+	            String lower = line.toLowerCase();
+	            if (lower.startsWith("username") && lower.contains("password")) {
+	                continue;
+	            }
+
+	            String[] parts = line.split(",", -1);
+	            if (parts.length < 1) continue;
+
+	            if (parts[0].trim().equals(username)) {
+	                return true;
+	            }
+	        }
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+
+	    return false;
+	}
+
+
+
 
 
 	private static String getCSVPath() {
