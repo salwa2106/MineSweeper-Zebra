@@ -11,6 +11,7 @@ public class GameController {
     private final ScoreManager scoreManager;
     private int currentPlayerIdx = 0;   // 0 or 1
 
+
     public GameController(String p1Name, String p2Name, Difficulty difficulty) {
         if (difficulty == null) difficulty = Difficulty.EASY;
 
@@ -77,4 +78,6 @@ public class GameController {
         cell.toggleFlag();
         scoreManager.onToggleFlag(cell);
     }
+
+	
 }

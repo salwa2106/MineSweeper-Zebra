@@ -7,205 +7,221 @@ import java.util.*;
 public class SysData {
 
     // EXACT PATH to your CSV file
-	private static final String CSV_FILE = getCSVPath();
-	private static final String USERS_CSV_FILE = getUsersCSVPath();
-	
-	// -------------------- LOGIN SESSION --------------------
-	private static String currentUsername = null;
-	private static String currentRole = null;
+    private static final String CSV_FILE = getCSVPath();
+    private static final String USERS_CSV_FILE = getUsersCSVPath();
 
-	public static String getCurrentUsername() { return currentUsername; }
-	public static String getCurrentRole() { return currentRole; }
+    // -------------------- I18N (LANGUAGE) --------------------
+    private static final l18n i18n = new l18n(Language.EN);
 
-	public static boolean isAdmin() {
-	    return currentRole != null && currentRole.equalsIgnoreCase("ADMIN");
-	}
+    public static l18n getI18n() {
+        return i18n;
+    }
 
-	public static void logout() {
-	    currentUsername = null;
-	    currentRole = null;
-	}
+    public static void setLanguage(Language lang) {
+        if (lang == null) lang = Language.EN;
+        i18n.setLanguage(lang);
+    }
 
-	
-	private static String getUsersCSVPath() {
-	    try {
-	        String path = SysData.class.getProtectionDomain()
-	                .getCodeSource().getLocation().getPath();
-	        String decoded = java.net.URLDecoder.decode(path, "UTF-8");
+    // (Optional) if you want SysData to also remember theme globally:
+    private static AppTheme currentTheme = AppTheme.DARK;
 
-	        // remove /bin if running in Eclipse
-	        if (decoded.contains("/bin")) {
-	            decoded = decoded.substring(0, decoded.indexOf("/bin"));
-	            System.out.println("Users CSV path (Dev): " + decoded + "/src/resources/users/users.csv");
-	            return decoded + "/src/resources/users/users.csv";
-	        }
+    public static AppTheme getTheme() {
+        return currentTheme;
+    }
 
-	        // running from JAR
-	        decoded = decoded.substring(0, decoded.lastIndexOf("/"));
-	        System.out.println("Users CSV path (JAR): " + decoded + "/resources/users/users.csv");
-	        return decoded + "/resources/users/users.csv";
+    public static void setTheme(AppTheme theme) {
+        if (theme == null) theme = AppTheme.DARK;
+        currentTheme = theme;
+    }
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return null;
-	    }
-	}
-	
-	public static boolean addUser(String username, String password, String role) {
+    // -------------------- LOGIN SESSION --------------------
+    private static String currentUsername = null;
+    private static String currentRole = null;
 
-	    if (username == null || password == null || role == null) return false;
+    public static String getCurrentUsername() { return currentUsername; }
+    public static String getCurrentRole() { return currentRole; }
 
-	    try {
-	        File file = new File(USERS_CSV_FILE);
+    public static boolean isAdmin() {
+        return currentRole != null && currentRole.equalsIgnoreCase("ADMIN");
+    }
 
-	        // create file if not exists
-	        if (!file.exists()) {
-	            file.getParentFile().mkdirs();
-	            file.createNewFile();
-	        }
+    public static void logout() {
+        currentUsername = null;
+        currentRole = null;
+    }
 
-	        // check if user already exists
-	        if (userExists(username)) {
-	            return false;
-	        }
+    private static String getUsersCSVPath() {
+        try {
+            String path = SysData.class.getProtectionDomain()
+                    .getCodeSource().getLocation().getPath();
+            String decoded = java.net.URLDecoder.decode(path, "UTF-8");
 
-	        try (BufferedWriter bw = new BufferedWriter(
-	                new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8))) {
+            // remove /bin if running in Eclipse
+            if (decoded.contains("/bin")) {
+                decoded = decoded.substring(0, decoded.indexOf("/bin"));
+                System.out.println("Users CSV path (Dev): " + decoded + "/src/resources/users/users.csv");
+                return decoded + "/src/resources/users/users.csv";
+            }
 
-	            bw.write(username + "," + password + "," + role.toUpperCase());
-	            bw.newLine();
-	        }
+            // running from JAR
+            decoded = decoded.substring(0, decoded.lastIndexOf("/"));
+            System.out.println("Users CSV path (JAR): " + decoded + "/resources/users/users.csv");
+            return decoded + "/resources/users/users.csv";
 
-	        return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	        return false;
-	    }
-	}
+    public static boolean addUser(String username, String password, String role) {
 
-	public static String authenticateUser(String username, String password) {
+        if (username == null || password == null || role == null) return false;
 
-	    if (username == null || password == null) return null;
+        try {
+            File file = new File(USERS_CSV_FILE);
 
-	    username = username.trim();
-	    password = password.trim();
+            // create file if not exists
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            }
 
-	    File file = new File(USERS_CSV_FILE);
-	    if (!file.exists()) {
-	        System.out.println("❌ users.csv not found at: " + file.getAbsolutePath());
-	        return null;
-	    }
+            // check if user already exists
+            if (userExists(username)) {
+                return false;
+            }
 
-	    try (BufferedReader br = new BufferedReader(
-	            new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            try (BufferedWriter bw = new BufferedWriter(
+                    new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8))) {
 
-	        String line;
-	        while ((line = br.readLine()) != null) {
+                bw.write(username + "," + password + "," + role.toUpperCase());
+                bw.newLine();
+            }
 
-	            if (line.trim().isEmpty()) continue;
+            return true;
 
-	            // ✅ remove BOM if exists (CRITICAL FIX)
-	            line = line.replace("\uFEFF", "");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-	            // ✅ skip header
-	            String lower = line.toLowerCase();
-	            if (lower.startsWith("username") && lower.contains("password")) {
-	                continue;
-	            }
+    public static String authenticateUser(String username, String password) {
 
-	            String[] parts = line.split(",", -1);
-	            if (parts.length < 3) continue;
+        if (username == null || password == null) return null;
 
-	            String u = parts[0].trim();
-	            String p = parts[1].trim();
-	            String role = parts[2].trim();
+        username = username.trim();
+        password = password.trim();
 
-	            System.out.println("CSV READ -> [" + u + "] [" + p + "]");
+        File file = new File(USERS_CSV_FILE);
+        if (!file.exists()) {
+            System.out.println("❌ users.csv not found at: " + file.getAbsolutePath());
+            return null;
+        }
 
-	            if (u.equals(username) && p.equals(password)) {
-	                currentUsername = u;     // ✅ store who logged in
-	                currentRole = role;      // ✅ store role (ADMIN/USER)
-	                return role;
-	            }
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
 
-	        }
+            String line;
+            while ((line = br.readLine()) != null) {
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
+                if (line.trim().isEmpty()) continue;
 
-	    return null;
-	}
+                // ✅ remove BOM if exists (CRITICAL FIX)
+                line = line.replace("\uFEFF", "");
 
+                // ✅ skip header
+                String lower = line.toLowerCase();
+                if (lower.startsWith("username") && lower.contains("password")) {
+                    continue;
+                }
 
+                String[] parts = line.split(",", -1);
+                if (parts.length < 3) continue;
 
-	public static boolean userExists(String username) {
+                String u = parts[0].trim();
+                String p = parts[1].trim();
+                String role = parts[2].trim();
 
-	    if (username == null) return false;
-	    username = username.trim();
+                System.out.println("CSV READ -> [" + u + "] [" + p + "]");
 
-	    File file = new File(USERS_CSV_FILE);
-	    if (!file.exists()) return false;
+                if (u.equals(username) && p.equals(password)) {
+                    currentUsername = u;     // ✅ store who logged in
+                    currentRole = role;      // ✅ store role (ADMIN/USER)
+                    return role;
+                }
 
-	    try (BufferedReader br = new BufferedReader(
-	            new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+            }
 
-	        String line;
-	        while ((line = br.readLine()) != null) {
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-	            if (line.trim().isEmpty()) continue;
+        return null;
+    }
 
-	            line = line.replace("\uFEFF", "");
+    public static boolean userExists(String username) {
 
-	            String lower = line.toLowerCase();
-	            if (lower.startsWith("username") && lower.contains("password")) {
-	                continue;
-	            }
+        if (username == null) return false;
+        username = username.trim();
 
-	            String[] parts = line.split(",", -1);
-	            if (parts.length < 1) continue;
+        File file = new File(USERS_CSV_FILE);
+        if (!file.exists()) return false;
 
-	            if (parts[0].trim().equals(username)) {
-	                return true;
-	            }
-	        }
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
+            String line;
+            while ((line = br.readLine()) != null) {
 
-	    return false;
-	}
+                if (line.trim().isEmpty()) continue;
 
+                line = line.replace("\uFEFF", "");
 
+                String lower = line.toLowerCase();
+                if (lower.startsWith("username") && lower.contains("password")) {
+                    continue;
+                }
 
+                String[] parts = line.split(",", -1);
+                if (parts.length < 1) continue;
 
+                if (parts[0].trim().equals(username)) {
+                    return true;
+                }
+            }
 
-	private static String getCSVPath() {
-	    try {
-	        String path = SysData.class.getProtectionDomain()
-	                .getCodeSource().getLocation().getPath();
-	        String decoded = java.net.URLDecoder.decode(path, "UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-	        // remove /bin if running in Eclipse
-	        if (decoded.contains("/bin")) {
-	            decoded = decoded.substring(0, decoded.indexOf("/bin"));
-	            System.out.println("CSV path (Dev): " + decoded + "/src/resources/questions/questionsCell.csv");
-	            return decoded + "/src/resources/questions/questionsCell.csv";
-	        }
+        return false;
+    }
 
-	        // running from JAR
-	        decoded = decoded.substring(0, decoded.lastIndexOf("/"));
-	        System.out.println("CSV path (JAR): " + decoded + "/resources/questions/questionsCell.csv");
-	        return decoded + "/resources/questions/questionsCell.csv";
+    private static String getCSVPath() {
+        try {
+            String path = SysData.class.getProtectionDomain()
+                    .getCodeSource().getLocation().getPath();
+            String decoded = java.net.URLDecoder.decode(path, "UTF-8");
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return null;
-	    }
-	}
+            // remove /bin if running in Eclipse
+            if (decoded.contains("/bin")) {
+                decoded = decoded.substring(0, decoded.indexOf("/bin"));
+                System.out.println("CSV path (Dev): " + decoded + "/src/resources/questions/questionsCell.csv");
+                return decoded + "/src/resources/questions/questionsCell.csv";
+            }
 
+            // running from JAR
+            decoded = decoded.substring(0, decoded.lastIndexOf("/"));
+            System.out.println("CSV path (JAR): " + decoded + "/resources/questions/questionsCell.csv");
+            return decoded + "/resources/questions/questionsCell.csv";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     // Use comma for CSV (Excel exported with commas)
     private static final String SEP = ",";
@@ -239,9 +255,7 @@ public class SysData {
         return questions.get(rnd.nextInt(questions.size()));
     }
 
-    /** Returns a random question for the given difficulty ("easy","medium","hard","pro").
-     *  If none exist, falls back to any question (nextRandom()).
-     */
+    /** Returns a random question for the given difficulty ("easy","medium","hard","pro"). */
     public static Question nextRandomByDifficulty(String difficulty) {
         if (questions.isEmpty()) {
             System.err.println("⚠ No questions loaded. Check CSV file!");
@@ -269,9 +283,7 @@ public class SysData {
         return filtered.get(rnd.nextInt(filtered.size()));
     }
 
-    
     // -------------------- CSV LOADING --------------------
-
     public static void loadFromCsv() {
         questions.clear();
 
@@ -314,14 +326,12 @@ public class SysData {
                 Integer pw   = parseIntOrNull(parts[7]);
                 Integer life = parseIntOrNull(parts[8]);
 
-                // 🔹 NEW: difficulty column at index 9 (with default "easy" if missing)
+                // difficulty column index 9 (default easy)
                 String difficulty = "easy";
                 if (parts.length > 9 && parts[9] != null && !parts[9].trim().isEmpty()) {
                     difficulty = parts[9].trim().toLowerCase();
                 }
 
-                // 🔹 Updated constructor to include difficulty
-             // ✅ Build Question object correctly
                 Question q = new Question();
                 q.setText(text);
                 q.setOptA(optA);
@@ -334,60 +344,54 @@ public class SysData {
                 q.setLifeDelta(life);
                 q.setDifficulty(difficulty);
 
-                // ✅ IMPORTANT: add to list
                 questions.add(q);
+            }
 
-
-
-            }} catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
 
+        System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
     }
 
     // -------------------- CSV SAVING --------------------
-
     public static void saveToCsv() {
-    	System.out.println("🔥 SAVE called");
+        System.out.println("🔥 SAVE called");
         File f = new File(CSV_FILE);
 
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(f), StandardCharsets.UTF_8))) {
 
-        	bw.write("Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty");
-        	bw.newLine();
+            bw.write("Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty");
+            bw.newLine();
 
-        	for (Question q : questions) {
-        	    String diff = q.getDifficulty();
-        	    if (diff == null || diff.isBlank()) {
-        	        diff = "easy";
-        	    }
+            for (Question q : questions) {
+                String diff = q.getDifficulty();
+                if (diff == null || diff.isBlank()) diff = "easy";
 
-        	    bw.write(q.getText() + SEP);
-        	    bw.write(q.getOptA() + SEP);
-        	    bw.write(q.getOptB() + SEP);
-        	    bw.write(q.getOptC() + SEP);
-        	    bw.write(q.getOptD() + SEP);
-        	    bw.write(q.getCorrect() + SEP);
-        	    bw.write(nvl(q.getPointsRight()) + SEP);
-        	    bw.write(nvl(q.getPointsWrong()) + SEP);
-        	    bw.write(nvl(q.getLifeDelta()) + SEP);
-        	    bw.write(diff);
-        	    bw.newLine();
-        	}
+                bw.write(q.getText() + SEP);
+                bw.write(q.getOptA() + SEP);
+                bw.write(q.getOptB() + SEP);
+                bw.write(q.getOptC() + SEP);
+                bw.write(q.getOptD() + SEP);
+                bw.write(q.getCorrect() + SEP);
+                bw.write(nvl(q.getPointsRight()) + SEP);
+                bw.write(nvl(q.getPointsWrong()) + SEP);
+                bw.write(nvl(q.getLifeDelta()) + SEP);
+                bw.write(diff);
+                bw.newLine();
+            }
 
             System.out.println("✔ CSV saved successfully at " + f.getAbsolutePath());
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("🔥 SysData.saveToCsv CALLED");
 
+        System.out.println("🔥 SysData.saveToCsv CALLED");
     }
 
     // -------------------- Helpers --------------------
-
     private static Integer parseIntOrNull(String s) {
         try {
             s = s.trim();
