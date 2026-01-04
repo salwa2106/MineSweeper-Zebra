@@ -1695,6 +1695,9 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        showQuestionDialog(q);
 	                        cell.setSpecialUsed(true);
 	                        updateButtonForCell(ownerIdx, cell);
+	                        
+	                        usedTurn = true;   // ✅ activation ends the turn
+
 	                    }
 
 	                    break;
@@ -1780,6 +1783,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	                        cell.setSpecialUsed(true);
 	                        updateButtonForCell(ownerIdx, cell);
+	                        usedTurn = true;   // ✅ activation ends the turn
+
 	                    }
 
 	                    break;
