@@ -37,5 +37,23 @@ What is the main language spoken in Brazil?,Spanish,Portuguese,French,English,B,
 Which algorithm uses a divide-and-conquer strategy?,Insertion Sort,Bubble Sort,Merge Sort,Counting Sort,C,3,-1,1,pro
 Which data structure is used for DFS?,Queue,Stack,Heap,Tree,B,3,-1,1,pro
 What is Big-O of binary search?,O(n),O(log n),O(n²),O(1),B,3,-1,1,pro
-Which protocol secures web communication?,HTTP,FTP,SSH,HTTPS,D,3,-1,1,pro
-What is the time complexity of heap insertion?,O(log n),O(n),O(1),O(n log n),A,3,-1,1,pro
+What is the main goal of software testing?,To write code faster,To find defects before release,To design the UI,To deploy the system,B,3,-1,1,easy
+Which document describes what the system should do?,Test Plan,Requirements Specification,Source Code,User Manual,B,3,-1,1,easy
+What does MVC separate?,Hardware and software,Data logic and UI,Network layers,Users and admins,B,3,-1,1,easy
+Which phase focuses on fixing bugs?,Requirements,Design,Maintenance,Deployment,C,3,-1,1,easy
+What is a requirement?,A test case,A user need or constraint,A design pattern,A coding standard,B,3,-1,1,easy
+Which testing level focuses on individual components?,System Testing,Acceptance Testing,Unit Testing,Integration Testing,C,3,-1,1,medium
+What is the purpose of a use case?,Describe database schema,Describe user-system interaction,Measure performance,Control versions,B,3,-1,1,medium
+Which model shows system behavior over time?,Class diagram,State diagram,Context diagram,ER diagram,B,3,-1,1,medium
+What is verification?,Are we building the right product?,Are we building the product right?,Is the UI usable?,,Is the system fast enough?,B,3,-1,1,medium
+What does configuration management mainly control?,User permissions,Source code changes,System performance,Database queries,B,3,-1,1,medium
+Which activity is part of software evolution?,Writing initial requirements,Adding new features after release,Creating UML diagrams only,Stopping system usage,B,3,-1,1,hard
+According to Lehman’s laws, what happens if a system is not maintained?,It becomes more efficient,Its quality declines,It stops changing,It becomes simpler,B,3,-1,1,hard
+Which testing is performed by end users?,Unit testing,System testing,User acceptance testing,Integration testing,C,3,-1,1,hard
+What is the main risk of poor documentation?,Faster development,Harder maintenance,Better testing,Higher quality,B,3,-1,1,hard
+Which standard focuses on software quality management?,ISO 9001,HTML,CSS,SQL,A,3,-1,1,hard
+Why are inspections useful before implementation?,They execute the code,They detect defects without running code,They replace testing,They improve performance,B,3,-1,1,pro
+What is the main purpose of architectural design?,Write detailed code,Define system structure and components,Test individual functions,Design test cases,B,3,-1,1,pro
+Which activity belongs to change impact analysis?,Estimating affected components,Writing unit tests,Drawing UI screens,Deploying to users,A,3,-1,1,pro
+What problem do design patterns solve?,Low memory usage,Recurring design problems,Database performance,Network latency,B,3,-1,1,pro
+Why is maintenance the longest phase of software life?,Because systems stop evolving,Because users request changes over time,Because coding is slow,Because testing is expensive,B,3,-1,1,pro

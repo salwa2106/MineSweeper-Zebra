@@ -338,16 +338,18 @@ public class SysData {
                 questions.add(q);
 
 
-            System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
 
             }} catch (IOException e) {
             e.printStackTrace();
         }
+        System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
+
     }
 
     // -------------------- CSV SAVING --------------------
 
     public static void saveToCsv() {
+    	System.out.println("🔥 SAVE called");
         File f = new File(CSV_FILE);
 
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
@@ -380,6 +382,8 @@ public class SysData {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        System.out.println("🔥 SysData.saveToCsv CALLED");
+
     }
 
     // -------------------- Helpers --------------------

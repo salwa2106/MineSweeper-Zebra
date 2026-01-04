@@ -587,10 +587,11 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	        QuestionsWizardFrame.QuestionsController adapter =
 	                new QuestionsWizardFrame.QuestionsController() {
-	                    @Override
-	                    public java.util.List<Model.Question> getAllQuestions() {
-	                        return Model.SysData.getQuestions();
-	                    }
+	        	@Override
+	        	public java.util.List<Model.Question> getAllQuestions() {
+	        	    return questionsController.getAllQuestions();
+	        	}
+
 
 	                    @Override
 	                    public void importFromCsv(java.io.File file) throws Exception {
@@ -624,7 +625,6 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        QuestionsWizardFrame wizard = new QuestionsWizardFrame(adapter, () -> {
 	            // Called when user clicks Back in wizard
 	            // setVisible(true);
-	            Model.SysData.loadFromCsv(); // reload questions after changes
 	        });
 	        wizard.setVisible(true);
 	    }
