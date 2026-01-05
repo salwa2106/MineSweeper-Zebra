@@ -622,37 +622,11 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        // Open wizard (optional: hide game window while editing)
 	        // setVisible(false);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> parent of 1b4a9f9 (Revert "aa")
-	                QuestionsWizardFrame wizard =
-	                        new QuestionsWizardFrame(
-	                                this,               // 👈 pass MAIN FRAME
-	                                questionsController,
-	                                () -> SysData.loadFromCsv()
-	                        );
-	                wizard.setVisible(true);
-
-=======
 	        QuestionsWizardFrame wizard = new QuestionsWizardFrame(adapter, () -> {
 	            // Called when user clicks Back in wizard
 	            // setVisible(true);
 	        });
 	        wizard.setVisible(true);
->>>>>>> 445d8746fcce5987b4933933532e178612f127f5
-<<<<<<< HEAD
-=======
-	        QuestionsWizardFrame wizard = new QuestionsWizardFrame(adapter, () -> {
-	            // Called when user clicks Back in wizard
-	            // setVisible(true);
-	            Model.SysData.loadFromCsv(); // reload questions after changes
-	        });
-	        wizard.setVisible(true);
->>>>>>> parent of 6770128 (adding Id to questions)
-=======
->>>>>>> parent of 1b4a9f9 (Revert "aa")
 	    }
 
 
