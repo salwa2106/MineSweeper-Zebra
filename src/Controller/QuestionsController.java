@@ -30,6 +30,9 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
     public List<Question> getAllQuestions() {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
         // Always reflect current SysData state
 =======
 >>>>>>> 445d8746fcce5987b4933933532e178612f127f5
@@ -91,6 +94,7 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         for (Question x : list) SysData.addQuestion(x);
         SysData.saveToCsv();
       
+<<<<<<< HEAD
 =======
         return new ArrayList<>(questions);
     }
@@ -108,11 +112,16 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         questions.set(index, q);
         syncToSysData();
 >>>>>>> parent of 6770128 (adding Id to questions)
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
     }
 
     @Override
     public void deleteQuestionAtIndex(int index) {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
         System.out.println("🔥 DELETE called with index = " + index);
         List<Question> list = new ArrayList<>(SysData.getQuestions());
         if (index < 0 || index >= list.size())
@@ -126,18 +135,24 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         System.out.println("🔥 DELETE called index=" + index);
 
 >>>>>>> 445d8746fcce5987b4933933532e178612f127f5
+<<<<<<< HEAD
 =======
         if (index < 0 || index >= questions.size())
             throw new IndexOutOfBoundsException("Invalid row index: " + index);
         questions.remove(index);
         syncToSysData();
 >>>>>>> parent of 6770128 (adding Id to questions)
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
     }
 
     @Override
     public void importFromCsv(File file) throws Exception {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
         // Overwrite the REAL questionsCell.csv
         File target = new File(
                 SysData.class
@@ -198,16 +213,20 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         for (Question q : loaded) SysData.addQuestion(q);
         SysData.saveToCsv(); // ✅ import replaces and saves
 >>>>>>> 445d8746fcce5987b4933933532e178612f127f5
+<<<<<<< HEAD
 =======
         try (InputStream in = new FileInputStream(file)) {
             importFromStream(in);
             syncToSysData();
         }
 >>>>>>> parent of 6770128 (adding Id to questions)
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
     }
 
     @Override
     public void exportToCsv(File file) throws Exception {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
         SysData.saveToCsv();
@@ -426,6 +445,45 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
         return mustQuote ? "\"" + x + "\"" : x;
 >>>>>>> parent of 6770128 (adding Id to questions)
     }
+=======
+        SysData.saveToCsv();
+
+        File source = new File(
+                SysData.class
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .getPath()
+                        .replace("/bin", "")
+                        + "/src/resources/questions/questionsCell.csv"
+        );
+
+        Files.copy(source.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+=======
+        try (BufferedWriter bw = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+
+            bw.write("Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty");
+            bw.newLine();
+
+            for (Question q : SysData.getQuestions()) {
+                String diff = (q.getDifficulty() == null || q.getDifficulty().isBlank()) ? "easy" : q.getDifficulty();
+
+                bw.write(csvEscape(q.getText()) + "," +
+                        csvEscape(q.getOptA()) + "," +
+                        csvEscape(q.getOptB()) + "," +
+                        csvEscape(q.getOptC()) + "," +
+                        csvEscape(q.getOptD()) + "," +
+                        csvEscape(String.valueOf(q.getCorrect())) + "," +
+                        csvEscape(String.valueOf(nvl(q.getPointsRight(), 3))) + "," +
+                        csvEscape(String.valueOf(nvl(q.getPointsWrong(), -1))) + "," +
+                        csvEscape(String.valueOf(nvl(q.getLifeDelta(), 1))) + "," +
+                        csvEscape(diff));
+                bw.newLine();
+            }
+        }
+    }
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
 
     private int parseIntOrDefault(String s, int def) {
         try { return Integer.parseInt(s.trim()); }

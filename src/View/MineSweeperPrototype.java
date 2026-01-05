@@ -624,6 +624,9 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
 	                QuestionsWizardFrame wizard =
 	                        new QuestionsWizardFrame(
 	                                this,               // 👈 pass MAIN FRAME
@@ -639,6 +642,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        });
 	        wizard.setVisible(true);
 >>>>>>> 445d8746fcce5987b4933933532e178612f127f5
+<<<<<<< HEAD
 =======
 	        QuestionsWizardFrame wizard = new QuestionsWizardFrame(adapter, () -> {
 	            // Called when user clicks Back in wizard
@@ -647,6 +651,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        });
 	        wizard.setVisible(true);
 >>>>>>> parent of 6770128 (adding Id to questions)
+=======
+>>>>>>> parent of 1b4a9f9 (Revert "aa")
 	    }
 
 
