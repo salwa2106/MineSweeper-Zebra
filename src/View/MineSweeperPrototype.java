@@ -1995,9 +1995,9 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                    }
 	                    case "medium" -> {
 	                        if (correct) {
-	                            // reveal a mine cell +6pts – we only implement the +6pts here
+	                           
 	                            deltaPts = 6;
-	                            // TODO: optionally reveal a random mine cell (no extra score)
+	                            flagRandomMine();
 	                        } else {
 	                            // (-6pts) OR nothing
 	                            if (rng.nextBoolean()) deltaPts = -6;
@@ -2006,7 +2006,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                    case "hard" -> {
 	                        if (correct) {
 	                            // 3x3 mine pattern +10pts – we only implement +10pts
-	                            deltaPts = 10;
+	                            
+	                            openRandom3x3();    // ⭐ ADD THIS
 	                            // TODO: optionally place extra mines in 3x3 pattern
 	                        } else {
 	                            deltaPts = -10;
@@ -2409,6 +2410,77 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            bumpScore(overflow * perLife);
 	            sharedLives = MAX_LIVES;
 	            updateSharedHearts();
+	        }
+	    }
+	    private void flagRandomMine() {
+	        int currentPlayer = p1Turn ? 0 : 1;
+
+	    // scan current player's board
+	        Board board = boards[currentPlayer];
+
+	        java.util.List<Cell> candidates = new java.util.ArrayList<>();
+
+	        for (int r = 0; r < board.getRows(); r++) {
+	            for (int c = 0; c < board.getCols(); c++) {
+	                Cell cell = board.getCell(r, c);
+	                if (cell.getType() == CellType.MINE && !cell.isFlagged()) {
+	                    candidates.add(cell);
+	                }
+	            }
+	        }
+
+	        if (candidates.isEmpty()) return;
+
+	        Cell chosen = candidates.get(rng.nextInt(candidates.size()));
+	        chosen.toggleFlag();
+
+	        TileButton btn = buttons[currentPlayer][chosen.getRow()][chosen.getCol()];
+	        int W = btn.getPreferredSize().width;
+	        int H = btn.getPreferredSize().height;
+	        btn.setOverlayIcon(loadIconFit(A_FLAG, W / 2, H / 2));
+
+	        flagsCount[currentPlayer]++;
+	        refreshRightStats();
+	    }
+	    private void openRandom3x3() {
+	        int currentPlayer = p1Turn ? 0 : 1;
+	        Board board = boards[currentPlayer];
+
+	        java.util.List<Cell> safeCells = new java.util.ArrayList<>();
+
+	        for (int r = 0; r < board.getRows(); r++) {
+	            for (int c = 0; c < board.getCols(); c++) {
+	                Cell cell = board.getCell(r, c);
+	                if (!cell.isRevealed() && cell.getType() != CellType.MINE) {
+	                    safeCells.add(cell);
+	                }
+	            }
+	        }
+
+	        if (safeCells.isEmpty()) return;
+
+	        Cell center = safeCells.get(rng.nextInt(safeCells.size()));
+
+	        for (int dr = -1; dr <= 1; dr++) {
+	            for (int dc = -1; dc <= 1; dc++) {
+	                int nr = center.getRow() + dr;
+	                int nc = center.getCol() + dc;
+
+	                if (nr < 0 || nc < 0 || nr >= board.getRows() || nc >= board.getCols())
+	                    continue;
+
+	                Cell c = board.getCell(nr, nc);
+	                if (!c.isRevealed() && c.getType() != CellType.MINE) {
+	                    c.reveal();
+	                    updateButtonForCell(currentPlayer, c);
+	                    bumpRevealedForCurrentTurn();
+
+	                    if (!c.isRevealScored()) {
+	                        bumpScore(1);
+	                        c.setRevealScored(true);
+	                    }
+	                }
+	            }
 	        }
 	    }
 	
