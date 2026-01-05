@@ -587,10 +587,11 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	        QuestionsWizardFrame.QuestionsController adapter =
 	                new QuestionsWizardFrame.QuestionsController() {
-	                    @Override
-	                    public java.util.List<Model.Question> getAllQuestions() {
-	                        return Model.SysData.getQuestions();
-	                    }
+	        	@Override
+	        	public java.util.List<Model.Question> getAllQuestions() {
+	        	    return questionsController.getAllQuestions();
+	        	}
+
 
 	                    @Override
 	                    public void importFromCsv(java.io.File file) throws Exception {
@@ -621,6 +622,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        // Open wizard (optional: hide game window while editing)
 	        // setVisible(false);
 
+<<<<<<< HEAD
 	                QuestionsWizardFrame wizard =
 	                        new QuestionsWizardFrame(
 	                                this,               // 👈 pass MAIN FRAME
@@ -629,6 +631,13 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        );
 	                wizard.setVisible(true);
 
+=======
+	        QuestionsWizardFrame wizard = new QuestionsWizardFrame(adapter, () -> {
+	            // Called when user clicks Back in wizard
+	            // setVisible(true);
+	        });
+	        wizard.setVisible(true);
+>>>>>>> 445d8746fcce5987b4933933532e178612f127f5
 	    }
 
 
@@ -1697,6 +1706,9 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        showQuestionDialog(q);
 	                        cell.setSpecialUsed(true);
 	                        updateButtonForCell(ownerIdx, cell);
+	                        
+	                        usedTurn = true;   // ✅ activation ends the turn
+
 	                    }
 
 	                    break;
@@ -1782,6 +1794,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	                        cell.setSpecialUsed(true);
 	                        updateButtonForCell(ownerIdx, cell);
+	                        usedTurn = true;   // ✅ activation ends the turn
+
 	                    }
 
 	                    break;

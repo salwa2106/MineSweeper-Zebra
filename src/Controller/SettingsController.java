@@ -1,7 +1,9 @@
 package Controller;
 
+import Model.AppTheme;
 import Model.Difficulty;
 import Model.GameSettings;
+import Model.Language;
 import Model.QuestionSettings;
 
 public class SettingsController {
@@ -34,6 +36,25 @@ public class SettingsController {
         // clamp to UI limits (your slider is 1..10)
         int v = Math.max(1, Math.min(10, lives));
         gameSettings.setMaxSharedLives(v);
+    }
+
+    // ✅ NEW: LANGUAGE + THEME are stored in GameSettings (single source of truth)
+    public Language getLanguage() {
+        return gameSettings.getLanguage();
+    }
+
+    public void setLanguage(Language language) {
+        if (language == null) language = Language.EN;
+        gameSettings.setLanguage(language);
+    }
+
+    public AppTheme getTheme() {
+        return gameSettings.getTheme();
+    }
+
+    public void setTheme(AppTheme theme) {
+        if (theme == null) theme = AppTheme.DARK;
+        gameSettings.setTheme(theme);
     }
 
     // ===================== QUESTION SETTINGS (MVC) =====================
