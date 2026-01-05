@@ -8,6 +8,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,21 +35,32 @@ public class QuestionsWizardFrame extends JFrame {
     // ====== UI ======
     private JTable table;
     private QuestionsTableModel tableModel;
+    private final JFrame owner;
+    public QuestionsWizardFrame(JFrame owner,
+            QuestionsController controller,
+            Runnable onBack) {
+super("Questions Wizard");
+this.owner = owner;
+this.controller = controller;
+this.onBack = onBack;
 
-    public QuestionsWizardFrame(QuestionsController controller, Runnable onBack) {
-        super("Questions Wizard");
-        this.controller = controller;
-        this.onBack = onBack;
+setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+setExtendedState(JFrame.MAXIMIZED_BOTH);
+setLocationRelativeTo(owner);
 
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+// 🔒 disable main menu window
+if (owner != null) owner.setEnabled(false);
 
-        // ✅ Full screen
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setMinimumSize(new Dimension(1100, 650));
-        setLocationRelativeTo(null);
+setContentPane(buildUI());
 
-        setContentPane(buildUI());
+addWindowListener(new WindowAdapter() {
+    @Override
+    public void windowClosed(WindowEvent e) {
+        restoreOwner();
     }
+});
+
+}
 
     private JComponent buildUI() {
         JPanel bg = new BackgroundImagePanel("assets/forest/bg_forest.jpg");
@@ -118,16 +131,27 @@ public class QuestionsWizardFrame extends JFrame {
         deleteBtn.addActionListener(e -> onDelete());
         backBtn.addActionListener(e -> {
             dispose();
+            restoreOwner();
             if (onBack != null) onBack.run();
         });
 
+
+
         return bg;
+    }
+    private void restoreOwner() {
+        if (owner != null) {
+            owner.setEnabled(true);
+            owner.setVisible(true);
+            owner.toFront();
+            owner.requestFocus();
+        }
     }
 
     private void reloadFromModel() {
-        List<Question> rows = new ArrayList<>(controller.getAllQuestions());
-        tableModel.setRows(rows);
+        tableModel.setRows(new ArrayList<>(controller.getAllQuestions()));
     }
+
 
     private void onImportCsv() {
         JFileChooser fc = new JFileChooser();
@@ -172,53 +196,60 @@ public class QuestionsWizardFrame extends JFrame {
             controller.addQuestion(created);
             reloadFromModel();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Add failed:\n" + ex.getMessage(),
+            JOptionPane.showMessageDialog(this,
+                    "Add failed:\n" + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+
     private void onEdit() {
-        int r = table.getSelectedRow();
-        if (r < 0) {
+        int row = table.getSelectedRow();
+        if (row < 0) {
             JOptionPane.showMessageDialog(this, "Select a row to edit.");
             return;
         }
 
-        Question current = tableModel.getRow(r);
-        Question edited = QuestionDialog.showDialog(this, current);
+        Question original = tableModel.getRow(row);
+        Question edited = QuestionDialog.showDialog(this, original);
         if (edited == null) return;
 
         try {
-            // Without an ID field in Model.Question, update by selected index
-            controller.updateQuestionAtIndex(r, edited);
+            controller.updateQuestionAtIndex(row, edited);
             reloadFromModel();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Edit failed:\n" + ex.getMessage(),
+            JOptionPane.showMessageDialog(this,
+                    "Edit failed:\n" + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+
     private void onDelete() {
-        int r = table.getSelectedRow();
-        if (r < 0) {
+        int row = table.getSelectedRow();
+        if (row < 0) {
             JOptionPane.showMessageDialog(this, "Select a row to delete.");
             return;
         }
 
-        int ok = JOptionPane.showConfirmDialog(this,
+        int ok = JOptionPane.showConfirmDialog(
+                this,
                 "Delete selected question?",
-                "Confirm", JOptionPane.YES_NO_OPTION);
-
+                "Confirm",
+                JOptionPane.YES_NO_OPTION
+        );
         if (ok != JOptionPane.YES_OPTION) return;
 
         try {
-            controller.deleteQuestionAtIndex(r);
+            controller.deleteQuestionAtIndex(row);
             reloadFromModel();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Delete failed:\n" + ex.getMessage(),
+            JOptionPane.showMessageDialog(this,
+                    "Delete failed:\n" + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
     // ====== UI HELPERS ======
     private JButton pillButton(String text, Color bg) {
