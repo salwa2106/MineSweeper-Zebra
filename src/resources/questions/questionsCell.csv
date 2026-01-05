@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ID,Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty
 2,How many legs does a spider have?,6,8,7,12,B,3,-1,1,easy
 3,Who wrote 'Romeo and Juliet'?,Shakespeare,Dickens,Tolkien,Rowling,A,3,-1,1,medium
@@ -39,64 +38,3 @@ ID,Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Diffic
 38,Which protocol secures web communication?,HTTP,FTP,SSH,HTTPS,D,3,-1,1,pro
 39,What is the time complexity of heap insertion?,O(log n),O(n),O(1),O(n log n),A,3,-1,1,pro
 40,what is your name,sami,ahmed,karem,semo,D,3,-1,0,easy
-=======
-Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty
-What is the capital of France?,London,Berlin,Paris,Madrid,C,3,-1,1,easy
-Which planet is known as the Red Planet?,Earth,Venus,Mars,Jupiter,C,3,-1,1,easy
-How many legs does a spider have?,6,8,10,12,B,3,-1,1,easy
-Who wrote 'Romeo and Juliet'?,Shakespeare,Dickens,Tolkien,Rowling,A,3,-1,1,medium
-What is the largest ocean?,Indian,Atlantic,Arctic,Pacific,D,3,-1,1,medium
-Who developed the theory of relativity?,Newton,Einstein,Bohr,Kepler,B,3,-1,1,hard
-What gas do plants absorb?,Oxygen,Hydrogen,Nitrogen,Carbon Dioxide,D,3,-1,1,medium
-What is the square root of 144?,10,11,12,14,C,3,-1,1,easy
-Which country hosted the 2016 Olympics?,China,UK,Brazil,Russia,C,3,-1,1,medium
-What is H2O commonly known as?,Salt,Water,Acid,Oxygen,B,3,-1,1,easy
-Who painted the Mona Lisa?,Van Gogh,Picasso,Da Vinci,Monet,C,3,-1,1,medium
-What is the hardest natural substance?,Gold,Iron,Diamond,Quartz,C,3,-1,1,medium
-Which element has the chemical symbol 'O'?,Oxygen,Gold,Helium,Silver,A,3,-1,1,easy
-Which algorithm has average O(n log n) complexity?,Bubble Sort,Merge Sort,Selection Sort,Linear Search,B,3,-1,1,pro
-What is the speed of light?,3,000 km/s,30,000 km/s,3,0,3,0,000 km/s
-What is the powerhouse of the cell?,Nucleus,Mitochondria,Ribosome,Chloroplast,B,3,-1,1,medium
-Which data structure works on FIFO?,Stack,Queue,Tree,Graph,B,3,-1,1,hard
-In which year did World War II end?,1940,1942,1945,1950,C,3,-1,1,medium
-What does CPU stand for?,Central Process Unit,Central Processing Unit,Computer Personal Unit,Core Power Unit,B,3,-1,1,easy
-What is the largest planet in our solar system?,Earth,Mars,Jupiter,Saturn,C,3,-1,1,easy
-What is the smallest prime number?,0,1,2,3,C,3,-1,1,easy
-How many continents are there?,5,6,7,8,C,3,-1,1,easy
-What color do you get when you mix red and white?,Pink,Blue,Green,Purple,A,3,-1,1,easy
-How many days are in a leap year?,364,365,366,367,C,3,-1,1,easy
-Which animal is known as the king of the jungle?,Elephant,Lion,Tiger,Leopard,B,3,-1,1,easy
-What is the boiling point of water?,50°C,80°C,100°C,120°C,C,3,-1,1,medium
-Which metal is liquid at room temperature?,Gold,Iron,Mercury,Silver,C,3,-1,1,medium
-Which organ pumps blood?,Liver,Brain,Heart,Lungs,C,3,-1,1,medium
-What is the chemical symbol for Sodium?,So,Na,N,Nm,B,3,-1,1,medium
-Which country invented pizza?,France,Germany,Italy,Spain,C,3,-1,1,medium
-What is the derivative of x²?,x,2x,x³,1,B,3,-1,1,hard
-What is the cube root of 27?,9,3,6,12,B,3,-1,1,hard
-Which gas makes up most of Earth’s atmosphere?,Oxygen,Nitrogen,Carbon Dioxide,Helium,B,3,-1,1,hard
-What is the hardest rock?,Granite,Diamond,Marble,Basalt,B,3,-1,1,hard
-What is the main language spoken in Brazil?,Spanish,Portuguese,French,English,B,3,-1,1,hard
-Which algorithm uses a divide-and-conquer strategy?,Insertion Sort,Bubble Sort,Merge Sort,Counting Sort,C,3,-1,1,pro
-Which data structure is used for DFS?,Queue,Stack,Heap,Tree,B,3,-1,1,pro
-What is Big-O of binary search?,O(n),O(log n),O(n²),O(1),B,3,-1,1,pro
-What is the main goal of software testing?,To write code faster,To find defects before release,To design the UI,To deploy the system,B,3,-1,1,easy
-Which document describes what the system should do?,Test Plan,Requirements Specification,Source Code,User Manual,B,3,-1,1,easy
-What does MVC separate?,Hardware and software,Data logic and UI,Network layers,Users and admins,B,3,-1,1,easy
-Which phase focuses on fixing bugs?,Requirements,Design,Maintenance,Deployment,C,3,-1,1,easy
-What is a requirement?,A test case,A user need or constraint,A design pattern,A coding standard,B,3,-1,1,easy
-Which testing level focuses on individual components?,System Testing,Acceptance Testing,Unit Testing,Integration Testing,C,3,-1,1,medium
-What is the purpose of a use case?,Describe database schema,Describe user-system interaction,Measure performance,Control versions,B,3,-1,1,medium
-Which model shows system behavior over time?,Class diagram,State diagram,Context diagram,ER diagram,B,3,-1,1,medium
-What is verification?,Are we building the right product?,Are we building the product right?,Is the UI usable?,,Is the system fast enough?,B,3,-1,1,medium
-What does configuration management mainly control?,User permissions,Source code changes,System performance,Database queries,B,3,-1,1,medium
-Which activity is part of software evolution?,Writing initial requirements,Adding new features after release,Creating UML diagrams only,Stopping system usage,B,3,-1,1,hard
-According to Lehman’s laws, what happens if a system is not maintained?,It becomes more efficient,Its quality declines,It stops changing,It becomes simpler,B,3,-1,1,hard
-Which testing is performed by end users?,Unit testing,System testing,User acceptance testing,Integration testing,C,3,-1,1,hard
-What is the main risk of poor documentation?,Faster development,Harder maintenance,Better testing,Higher quality,B,3,-1,1,hard
-Which standard focuses on software quality management?,ISO 9001,HTML,CSS,SQL,A,3,-1,1,hard
-Why are inspections useful before implementation?,They execute the code,They detect defects without running code,They replace testing,They improve performance,B,3,-1,1,pro
-What is the main purpose of architectural design?,Write detailed code,Define system structure and components,Test individual functions,Design test cases,B,3,-1,1,pro
-Which activity belongs to change impact analysis?,Estimating affected components,Writing unit tests,Drawing UI screens,Deploying to users,A,3,-1,1,pro
-What problem do design patterns solve?,Low memory usage,Recurring design problems,Database performance,Network latency,B,3,-1,1,pro
-Why is maintenance the longest phase of software life?,Because systems stop evolving,Because users request changes over time,Because coding is slow,Because testing is expensive,B,3,-1,1,pro
->>>>>>> 445d8746fcce5987b4933933532e178612f127f5
