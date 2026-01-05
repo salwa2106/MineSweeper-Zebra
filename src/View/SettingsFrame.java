@@ -30,6 +30,8 @@ public class SettingsFrame extends JFrame {
         setLocationRelativeTo(null);
 
         setContentPane(buildContent());
+        
+ 
     }
 
     private JComponent buildContent() {
