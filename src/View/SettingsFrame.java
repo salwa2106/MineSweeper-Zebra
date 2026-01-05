@@ -1,19 +1,16 @@
 package View;
 
 import Controller.SettingsController;
-import Model.Difficulty;
-import Model.GameSettings;
+import Model.*;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class SettingsFrame extends JFrame {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	// Theme colors (match your project)
+    private static final long serialVersionUID = 1L;
+
+    // Theme colors (match your project)
     private static final Color TEXT = new Color(225, 245, 240);
     private static final Color BORDER = new Color(160, 255, 255, 130);
 
@@ -21,12 +18,15 @@ public class SettingsFrame extends JFrame {
     private final Runnable onSaved; // callback to notify main view
 
     public SettingsFrame(SettingsController controller, Runnable onSaved) {
-        super("Settings");
+        super(safeT("btn.settings", "Settings"));
+        System.out.println(">>> SettingsFrame LOADED from: " + SettingsFrame.class.getProtectionDomain().getCodeSource().getLocation());
         this.controller = controller;
         this.onSaved = onSaved;
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setSize(720, 520);
+
+        // You can keep this size; scroll will handle content anyway.
+        setSize(820, 620);
         setLocationRelativeTo(null);
 
         setContentPane(buildContent());
@@ -41,23 +41,27 @@ public class SettingsFrame extends JFrame {
         JPanel glass = frostedCard();
         glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
 
-        JLabel title = new JLabel("GENERAL SETTINGS", SwingConstants.CENTER);
+        JLabel title = new JLabel(safeT("settings.title", "GENERAL SETTINGS"), SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setFont(new Font("Georgia", Font.BOLD, 30));
         title.setForeground(new Color(190, 255, 220));
         glass.add(title);
         glass.add(Box.createVerticalStrut(20));
 
-        JCheckBox cbSound = themedCheck("Sound Effects", gs.isSoundEnabled());
-        JCheckBox cbAnim  = themedCheck("Animations", gs.isAnimationsEnabled());
-        JCheckBox cbAuto  = themedCheck("Auto-save History", gs.isAutoSaveHistory());
+        JCheckBox cbSound = themedCheck(safeT("settings.sound", "Sound Effects"), gs.isSoundEnabled());
+        JCheckBox cbAnim  = themedCheck(safeT("settings.animations", "Animations"), gs.isAnimationsEnabled());
+        JCheckBox cbAuto  = themedCheck(safeT("settings.autosave", "Auto-save History"), gs.isAutoSaveHistory());
 
-        JComboBox<String> cbDiff = new JComboBox<>(new String[]{"Easy", "Medium", "Hard"});
+        JComboBox<String> cbDiff = new JComboBox<>(new String[]{
+                safeT("diff.easy", "Easy"),
+                safeT("diff.medium", "Medium"),
+                safeT("diff.hard", "Hard")
+        });
         styleCombo(cbDiff);
         cbDiff.setSelectedIndex(switch (gs.getDefaultDifficulty()) {
             case EASY -> 0; case MEDIUM -> 1; case HARD -> 2;
         });
-        
+
         cbDiff.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(
@@ -67,24 +71,37 @@ public class SettingsFrame extends JFrame {
                 JLabel label = (JLabel) super.getListCellRendererComponent(
                         list, value, index, isSelected, cellHasFocus);
 
-                label.setOpaque(true); // ✅ critical
+                label.setOpaque(true);
 
                 if (index == -1) {
-                    // ✅ this is the "selected item" shown in the combo field
-                    label.setBackground(Color.WHITE);              // matches what Windows paints
-                    label.setForeground(new Color(20, 35, 35));    // dark readable text
+                    label.setBackground(Color.WHITE);
+                    label.setForeground(new Color(20, 35, 35));
                 } else {
-                    // ✅ dropdown list items (your theme)
                     label.setBackground(isSelected ? new Color(60, 90, 80)
-                                                   : new Color(30, 40, 35));
+                            : new Color(30, 40, 35));
                     label.setForeground(new Color(220, 255, 235));
                 }
-
                 return label;
             }
         });
 
+        // ✅ Language combo
+        JComboBox<String> cbLang = new JComboBox<>(new String[]{
+                safeT("lang.en", "English"),
+                safeT("lang.he", "Hebrew")
+        });
+        styleCombo(cbLang);
+        cbLang.setSelectedIndex(gs.getLanguage() == Language.HE ? 1 : 0);
 
+        // ✅ Theme combo
+        JComboBox<String> cbTheme = new JComboBox<>(new String[]{
+                safeT("theme.dark", "Dark"),
+                safeT("theme.light", "Light")
+        });
+        styleCombo(cbTheme);
+        cbTheme.setSelectedIndex(gs.getTheme() == AppTheme.DARK ? 0 : 1);
+
+        // Slider
         JSlider lives = new JSlider(1, 10, gs.getMaxSharedLives());
         styleSlider(lives);
 
@@ -94,23 +111,25 @@ public class SettingsFrame extends JFrame {
         gc.insets = new Insets(10, 10, 10, 10);
         gc.fill = GridBagConstraints.HORIZONTAL;
 
-        addRow(form, gc, 0, "Default Difficulty:", cbDiff);
-        addRow(form, gc, 1, "Max Shared Lives:", lives);
+        addRow(form, gc, 0, safeT("settings.defaultDifficulty", "Default Difficulty:"), cbDiff);
+        addRow(form, gc, 1, safeT("settings.maxLives", "Max Shared Lives:"), lives);
+        addRow(form, gc, 2, safeT("lbl.language", "Language:"), cbLang);
+        addRow(form, gc, 3, safeT("lbl.theme", "Theme:"), cbTheme);
 
-        gc.gridx = 0; gc.gridy = 2; gc.gridwidth = 2;
+        gc.gridx = 0; gc.gridy = 4; gc.gridwidth = 2;
         form.add(cbSound, gc);
 
-        gc.gridy = 3;
+        gc.gridy = 5;
         form.add(cbAnim, gc);
 
-        gc.gridy = 4;
+        gc.gridy = 6;
         form.add(cbAuto, gc);
 
         glass.add(form);
         glass.add(Box.createVerticalStrut(18));
 
-        JButton save = frostedButton("Save");
-        JButton cancel = frostedButton("Cancel");
+        JButton save = frostedButton(safeT("btn.save", "Save"));
+        JButton cancel = frostedButton(safeT("btn.cancel", "Cancel"));
 
         save.addActionListener(e -> {
             controller.setSoundEnabled(cbSound.isSelected());
@@ -125,13 +144,27 @@ public class SettingsFrame extends JFrame {
             };
             controller.setDefaultDifficulty(d);
 
+            // ✅ Save language
+            Language lang = (cbLang.getSelectedIndex() == 1) ? Language.HE : Language.EN;
+            controller.setLanguage(lang);
+            SysData.setLanguage(lang);
+
+            // ✅ Save theme + apply immediately
+            AppTheme theme = (cbTheme.getSelectedIndex() == 0) ? AppTheme.DARK : AppTheme.LIGHT;
+            controller.setTheme(theme);
+            SysData.setTheme(theme);
+            ThemeManager.apply(theme);
+            ThemeManager.refreshAllWindows();
+
             if (onSaved != null) onSaved.run();
-            JOptionPane.showMessageDialog(this, "Settings saved.", "Settings",
+
+            JOptionPane.showMessageDialog(this,
+                    safeT("msg.saved", "Settings saved."),
+                    safeT("btn.settings", "Settings"),
                     JOptionPane.INFORMATION_MESSAGE);
+
             dispose();
         });
-
-
 
         cancel.addActionListener(e -> dispose());
 
@@ -140,13 +173,31 @@ public class SettingsFrame extends JFrame {
         actions.add(save);
         actions.add(cancel);
 
-        glass.add(actions);
+        // ✅ ensure it keeps height and isn't collapsed
+        actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
-        root.add(glass);
+        glass.add(actions);
+        glass.add(Box.createVerticalStrut(10));
+
+        // ✅ Wrap glass in scroll pane (fixes "buttons missing" forever)
+        JScrollPane sp = new JScrollPane(glass);
+        sp.setBorder(null);
+        sp.setOpaque(false);
+        sp.getViewport().setOpaque(false);
+        sp.getVerticalScrollBar().setUnitIncrement(16);
+
+        root.add(sp);
+
+        // ✅ RTL for Hebrew (applies to entire UI tree)
+        if (SysData.getI18n() != null && SysData.getI18n().isHebrew()) {
+            applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+            SwingUtilities.updateComponentTreeUI(this);
+        }
+
         return wrapBackground(root);
     }
 
-    // ---------- UI helpers (same design language) ----------
+    // ---------- UI helpers ----------
 
     private JPanel frostedCard() {
         JPanel glass = new JPanel() {
@@ -167,7 +218,10 @@ public class SettingsFrame extends JFrame {
         };
         glass.setOpaque(false);
         glass.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
-        glass.setPreferredSize(new Dimension(620, 440));
+
+        // ❌ DO NOT set a fixed preferredSize here (it hides bottom components!)
+        // glass.setPreferredSize(new Dimension(620, 440));
+
         return glass;
     }
 
@@ -183,7 +237,7 @@ public class SettingsFrame extends JFrame {
     private void styleCombo(JComboBox<String> cb) {
         cb.setFont(new Font("Georgia", Font.PLAIN, 15));
         cb.setBackground(Color.WHITE);
-        cb.setForeground(new Color(20, 35, 35)); // ✅ readable on white
+        cb.setForeground(new Color(20, 35, 35));
         cb.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
     }
 
@@ -241,12 +295,20 @@ public class SettingsFrame extends JFrame {
         return b;
     }
 
-    // If you want: reuse your forest background image here too.
     private JComponent wrapBackground(JComponent center) {
-        // Simple dark backdrop. If you want the same forest image, tell me and I’ll hook it to your A_BG.
         JPanel bg = new JPanel(new GridBagLayout());
         bg.setBackground(new Color(10, 15, 15));
         bg.add(center);
         return bg;
+    }
+
+    // safe translation helper (so missing keys won't crash your UI)
+    private static String safeT(String key, String fallback) {
+        try {
+            if (Model.SysData.getI18n() == null) return fallback;
+            return Model.SysData.getI18n().t(key);
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 }
