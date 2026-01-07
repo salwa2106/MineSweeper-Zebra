@@ -1,5 +1,8 @@
 package Model;
 
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Font;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -12,10 +15,35 @@ public class SysData {
 
     // -------------------- I18N (LANGUAGE) --------------------
     private static final l18n i18n = new l18n(Language.EN);
+    
 
     public static l18n getI18n() {
         return i18n;
     }
+    public static void applyGlobalFont(Component root) {
+        if (root == null) return;
+
+        boolean isHebrew = getI18n() != null && getI18n().isHebrew();
+
+        Font base = new Font("SansSerif", Font.PLAIN, 14);
+        if (isHebrew && base.canDisplayUpTo("אבגדהוזחטיכלמנסעפצקרשת") != -1) {
+            base = new Font("SansSerif", Font.PLAIN, 14); // fallback font that supports Hebrew
+        }
+
+        applyFontRecursively(root, base);
+    }
+
+    private static void applyFontRecursively(Component c, Font f) {
+        if (c == null) return;
+        c.setFont(f);
+
+        if (c instanceof Container cont) {
+            for (Component child : cont.getComponents()) {
+                applyFontRecursively(child, f);
+            }
+        }
+    }
+
 
     public static void setLanguage(Language lang) {
         if (lang == null) lang = Language.EN;

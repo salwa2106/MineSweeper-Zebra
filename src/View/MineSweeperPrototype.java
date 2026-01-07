@@ -11,6 +11,9 @@ import Model.Board;
 	
 	import javax.swing.*;
 import javax.swing.plaf.LayerUI;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 
 import java.awt.*;
 	import java.awt.event.*;
@@ -43,9 +46,9 @@ import java.util.List;
 
 		  private final JComboBox<String> cbDifficulty =
 		            new JComboBox<>(new String[]{
-		                "Easy (9x9)",
-		                "Medium (13x13)",
-		                "Hard (16x16)"
+		                safeT("difficulty.easy","Easy (9x9)"),
+		                safeT("difficulty.medium","Medium (13x13)"),
+		                safeT("difficulty.hard","Hard (16x16)")
 		            });
 	
 	    private static String fixPath(String rel) {
@@ -103,6 +106,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    /* ------------------------------ STATE ------------------------------ */
 	    private final CardLayout cards = new CardLayout();
 	    private final JPanel root = new JPanel(cards);
+	    private String currentScreen = SCREEN_MENU;
 	
 	    private static final String SCREEN_MENU     = "MENU";
 	    private static final String SCREEN_NEW_GAME = "NEW_GAME";
@@ -110,8 +114,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    private static final String SCREEN_SETTINGS = "SETTINGS";
 	    private static final String SCREEN_QSETTINGS = "QSETTINGS";
 	
-	    private final JLabel turnLabel        = new JLabel("Turn: Player 1");
-	    private final JLabel sharedScoreLabel = new JLabel("Score: 0");
+	    private final JLabel turnLabel        = new JLabel(safeT("status.turnInitial","Turn: Player 1"));
+	    private final JLabel sharedScoreLabel = new JLabel(safeT("status.sharedScoreInitial","Score: 0"));
 	    private final JLabel rightStats       = new JLabel();   // "<Player> • Revealed: X | Flags: Y"
 	    private int sharedPoints = 0;
 	
@@ -189,7 +193,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        // root.add(buildSettingsScreen(), SCREEN_SETTINGS);
 	        // root.add(buildQuestionSettingsScreen(), SCREEN_QSETTINGS);
 
-	        // default game board (easy) – will be rebuilt when "Start Game" is pressed
+	        // default game board (easy) – will be rebuilt when safeT("newgame.start", "Start Game") is pressed
 	        gamePanel = buildGame(currentDifficulty.rows, currentDifficulty.cols);
 	        root.add(gamePanel, SCREEN_GAME);
 
@@ -197,21 +201,54 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        forest.setLayout(new BorderLayout());
 	        forest.add(root, BorderLayout.CENTER);
 	        setContentPane(forest);
+	        SysData.applyGlobalFont(this);
+
+	    }
+	    private static String safeT(String key, String fallback) {
+	        try {
+	            if (SysData.getI18n() != null) {
+	                String v = SysData.getI18n().t(key);
+	                if (v != null && !v.isBlank()) return v;
+	            }
+	        } catch (Exception ignored) {}
+	        return fallback;
 	    }
 	    
-	    private JPanel buildSettingsScreen() {
+	    private void refreshLocalization() {
+	        try {
+	            boolean he = (SysData.getI18n() != null && SysData.getI18n().isHebrew());
+	            applyComponentOrientation(he ? java.awt.ComponentOrientation.RIGHT_TO_LEFT
+	                                         : java.awt.ComponentOrientation.LEFT_TO_RIGHT);
+	            // Rebuild static screens to update texts
+	            root.removeAll();
+	            root.setOpaque(false);
+	            root.add(buildMenu(), SCREEN_MENU);
+	            root.add(buildNewGame(), SCREEN_NEW_GAME);
+	            // Settings / question settings are popups now, but keep cards if you use them elsewhere
+	            // root.add(buildSettingsScreen(), SCREEN_SETTINGS);
+	            // root.add(buildQuestionSettingsScreen(), SCREEN_QSETTINGS);
+	            if (gamePanel != null) root.add(gamePanel, SCREEN_GAME);
+	            cards.show(root, currentScreen == null ? SCREEN_MENU : currentScreen);
+	            javax.swing.SwingUtilities.updateComponentTreeUI(this);
+	            SysData.applyGlobalFont(this);
+	            root.revalidate();
+	            root.repaint();
+	        } catch (Exception ignored) {}
+	    }
+
+private JPanel buildSettingsScreen() {
 	        JPanel page = new JPanel(new BorderLayout());
 	        page.setOpaque(false);
 
 	        JPanel card = woodCard();
-	        card.add(woodHeader("Settings"), BorderLayout.NORTH);
+	        card.add(woodHeader(safeT("settings.title",safeT("menu.settings", "Settings"))), BorderLayout.NORTH);
 
-	        JButton back = woodButton("Back");
+	        JButton back = woodButton(safeT("btn.back",safeT("btn.back", "Back")));
 	        back.addActionListener(e -> showMenu());
 
 	        JPanel center = new JPanel();
 	        center.setOpaque(false);
-	        center.add(new JLabel("TODO: Settings UI here"));
+	        center.add(new JLabel(safeT("todo.settings","TODO: Settings UI here")));
 
 	        card.add(center, BorderLayout.CENTER);
 
@@ -240,14 +277,14 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        page.setOpaque(false);
 
 	        JPanel card = woodCard();
-	        card.add(woodHeader("Question Settings"), BorderLayout.NORTH);
+	        card.add(woodHeader(safeT("questions.settings.title","Question Settings")), BorderLayout.NORTH);
 
-	        JButton back = woodButton("Back");
+	        JButton back = woodButton(safeT("btn.back",safeT("btn.back", "Back")));
 	        back.addActionListener(e -> showMenu());
 
 	        JPanel center = new JPanel();
 	        center.setOpaque(false);
-	        center.add(new JLabel("TODO: Question Settings UI here"));
+	        center.add(new JLabel(safeT("todo.questionSettings","TODO: Question Settings UI here")));
 
 	        card.add(center, BorderLayout.CENTER);
 
@@ -285,7 +322,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        header.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
 	
 	        JLabel lbl = new JLabel(title);
-	        lbl.setFont(new Font("Georgia", Font.BOLD, 24));
+	        lbl.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 24));
 	        lbl.setForeground(MOSS_GLOW);
 	
 	        header.add(lbl);
@@ -383,7 +420,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            }
 	        };
 	        b.setForeground(MOSS_GLOW);
-	        b.setFont(new Font("Georgia", Font.BOLD, 16));
+	        b.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 16));
 	        b.setFocusPainted(false);
 	        b.setContentAreaFilled(false);
 	        b.setBorderPainted(false);
@@ -453,14 +490,14 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        glass.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
 
 	        // Title
-	        JLabel title = new JLabel("MINESWEEPER", SwingConstants.CENTER);
+	        JLabel title = new JLabel(safeT("app.minesweeper","MINESWEEPER"), SwingConstants.CENTER);
 	        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        title.setFont(new Font("Georgia", Font.BOLD, 48));
+	        title.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 48));
 	        title.setForeground(new Color(190, 255, 220));
 
-	        JLabel subtitle = new JLabel("+ Trivia — Forest Edition", SwingConstants.CENTER);
+	        JLabel subtitle = new JLabel(safeT("app.subtitle",safeT("app.subtitle", "+ Trivia — Forest Edition")), SwingConstants.CENTER);
 	        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-	        subtitle.setFont(new Font("Georgia", Font.PLAIN, 22));
+	        subtitle.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.PLAIN, 22));
 	        subtitle.setForeground(new Color(170, 220, 200));
 
 	        glass.add(title);
@@ -469,12 +506,12 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        glass.add(Box.createVerticalStrut(40));
 
 	        // ✅ Create ALL 6 buttons
-	        JButton newGame = createFrostedButton("New Game");
-	        resumeButton = createFrostedButton("Resume");
-	        JButton settings = createFrostedButton("Settings");
+	        JButton newGame = createFrostedButton(safeT("menu.newGame", "New Game"));
+	        resumeButton = createFrostedButton(safeT("menu.resume", "Resume"));
+	        JButton settings = createFrostedButton(safeT("menu.settings", "Settings"));
 	       
-	        JButton history = createFrostedButton("History");
-	        JButton exit = createFrostedButton("Exit");
+	        JButton history = createFrostedButton(safeT("menu.history", "History"));
+	        JButton exit = createFrostedButton(safeT("btn.exit",safeT("menu.exit", "Exit")));
 	        JButton questionsBtn = null;
 	        if (SysData.isAdmin()) {
 	            questionsBtn = createFrostedButton("Questions");
@@ -484,7 +521,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	        // ✅ Button size
 	        Dimension btnSize = new Dimension(200, 55);
-	        Font btnFont = new Font("Georgia", Font.BOLD, 20);
+	        Font btnFont = new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 20);
 	        
 	        for (JButton b : new JButton[]{newGame, resumeButton, settings, history, exit}) {
 	            b.setPreferredSize(btnSize);
@@ -494,9 +531,9 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        }
 
 	        // ✅ Actions
-	        newGame.addActionListener(e -> cards.show(root, SCREEN_NEW_GAME));
+	        newGame.addActionListener(e -> { currentScreen = SCREEN_NEW_GAME; cards.show(root, SCREEN_NEW_GAME); });
         updateResumeButtonState();
-        resumeButton.addActionListener(e -> cards.show(root, SCREEN_GAME));
+        resumeButton.addActionListener(e -> { currentScreen = SCREEN_GAME; cards.show(root, SCREEN_GAME); });
 
 // ✅ Settings opens popup window
 	        settings.addActionListener(e -> {
@@ -513,6 +550,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        	    if (sharedLives > limit) sharedLives = limit;
 	        	    updateSharedHearts();
 	                syncDifficultyComboFromSettings();
+	                refreshLocalization();
 
 	        	});
 	        	frame.setVisible(true);
@@ -527,8 +565,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        exit.addActionListener(e -> {
 	            int r = JOptionPane.showConfirmDialog(
 	                this,
-	                "Return to login screen?",
-	                "Confirm",
+	                safeT("msg.returnToLogin",safeT("msg.returnToLogin", "Return to login screen?")),
+	                safeT("dlg.confirm",safeT("dlg.confirm", "Confirm")),
 	                JOptionPane.YES_NO_OPTION
 	            );
 
@@ -577,7 +615,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	    private void openQuestionsWizard() {
 	        if (!SysData.isAdmin()) {
-	            JOptionPane.showMessageDialog(this, "Admin only.");
+	            JOptionPane.showMessageDialog(this, safeT("msg.adminOnly",safeT("msg.adminOnly", "Admin only.")));
 	            return;
 	        }
 
@@ -672,7 +710,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            }
 	        };
 
-	        b.setFont(new Font("Georgia", Font.BOLD, 15));
+	        b.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 15));
 	        b.setFocusPainted(false);
 	        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	        b.setBorderPainted(false);
@@ -694,6 +732,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 
     private void showMenu() {
         updateResumeButtonState();
+        currentScreen = SCREEN_MENU;
         cards.show(root, SCREEN_MENU);
         root.revalidate();
         root.repaint();
@@ -743,14 +782,14 @@ private JPanel[] boardWrappers = new JPanel[2];
         glass.setPreferredSize(new Dimension(420, 440));
 
         // ⭐ TITLE (same hierarchy as menu)
-        JLabel title = new JLabel("NEW GAME", SwingConstants.CENTER);
+        JLabel title = new JLabel(safeT("newgame.title",safeT("newgame.title", "NEW GAME")), SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        title.setFont(new Font("Georgia", Font.BOLD, 42));
+        title.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 42));
         title.setForeground(new Color(190, 255, 220));
 
-        JLabel subtitle = new JLabel("Game Setup", SwingConstants.CENTER);
+        JLabel subtitle = new JLabel(safeT("newgame.subtitle",safeT("newgame.subtitle", "Game Setup")), SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        subtitle.setFont(new Font("Georgia", Font.PLAIN, 20));
+        subtitle.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.PLAIN, 20));
         subtitle.setForeground(new Color(170, 220, 200));
 
         glass.add(title);
@@ -763,11 +802,11 @@ private JPanel[] boardWrappers = new JPanel[2];
         form.setOpaque(false);
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
 
-        form.add(createLabeledField("Player 1 Name", tfP1));
+        form.add(createLabeledField(safeT("newgame.player1", "Player 1 Name"), tfP1));
         form.add(Box.createVerticalStrut(14));
-        form.add(createLabeledField("Player 2 Name", tfP2));
+        form.add(createLabeledField(safeT("newgame.player2", "Player 2 Name"), tfP2));
         form.add(Box.createVerticalStrut(14));
-        form.add(createLabeledField("Difficulty", cbDifficulty));
+        form.add(createLabeledField(safeT("newgame.difficulty", "Difficulty"), cbDifficulty));
 
         glass.add(form);
         glass.add(Box.createVerticalStrut(35));
@@ -776,8 +815,8 @@ private JPanel[] boardWrappers = new JPanel[2];
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         actions.setOpaque(false);
 
-        JButton start = createFrostedButton("Start Game");
-        JButton back  = createFrostedButton("Back");
+        JButton start = createFrostedButton(safeT("newgame.start", "Start Game"));
+        JButton back  = createFrostedButton(safeT("btn.back", "Back"));
 
         start.setPreferredSize(new Dimension(200, 55));
         back.setPreferredSize(new Dimension(200, 55));
@@ -803,7 +842,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 
     private JPanel createLabeledField(String label, JComponent field) {
         JLabel l = new JLabel(label);
-        l.setFont(new Font("Georgia", Font.BOLD, 16));
+        l.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 16));
         l.setForeground(new Color(220, 240, 235));
 
         JPanel row = new JPanel(new BorderLayout(12, 0));
@@ -819,7 +858,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	
 	
 	    private void styleField(JTextField tf) {
-	        tf.setFont(new Font("Georgia", Font.PLAIN, 14));
+	        tf.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.PLAIN, 14));
 	        tf.setForeground(TEXT_PRIMARY);
 	        tf.setCaretColor(MOSS_GLOW);
 	        tf.setOpaque(true);
@@ -844,7 +883,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            return;
 	        }
 
-	        // This difficulty is ONLY for the current game (chosen in "New Game" screen)
+	        // This difficulty is ONLY for the current game (chosen in safeT("menu.newGame", "New Game") screen)
 	        difficultyIdx = cbDifficulty.getSelectedIndex();
 	        currentDifficulty = switch (difficultyIdx) {
 	            case 0 -> Difficulty.EASY;
@@ -876,7 +915,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        resetSharedLives();
 
 	        p1Turn = true;
-	        turnLabel.setText("Turn: " + p1);
+	        turnLabel.setText(safeT("status.turnPrefix",safeT("status.turnPrefix", "Turn: ")) + p1);
 	        refreshRightStats();
 
 	        cards.show(root, SCREEN_GAME);
@@ -1125,7 +1164,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	
 	
 	        JLabel lbl = new JLabel(title, SwingConstants.CENTER);
-	        lbl.setFont(new Font("Georgia", Font.BOLD, 18));
+	        lbl.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 18));
 	        lbl.setForeground(MOSS_GLOW);
 	        outer.add(lbl, BorderLayout.NORTH);
 	
@@ -1415,16 +1454,16 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        bar.setPreferredSize(new Dimension(0, 60));
 	        bar.setOpaque(false);
 	
-	        turnLabel.setFont(new Font("Georgia", Font.BOLD, 16));
+	        turnLabel.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 16));
 	        turnLabel.setForeground(MOSS_GLOW);
 	
-	        sharedScoreLabel.setFont(new Font("Georgia", Font.BOLD, 14));
+	        sharedScoreLabel.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
 	        sharedScoreLabel.setForeground(TEXT_PRIMARY);
 	        updateSharedScoreLabel();
 	
-	        JButton help = woodButton("Help");
-	        JButton menu = woodButton("Main Menu");
-	        JButton historyBtn = woodButton("History");
+	        JButton help = woodButton(safeT("btn.help","Help"));
+	        JButton menu = woodButton(safeT("btn.mainMenu","Main Menu"));
+	        JButton historyBtn = woodButton(safeT("btn.history",safeT("menu.history", "History")));
 	        historyBtn.setPreferredSize(new Dimension(110, 34));
 	        historyBtn.addActionListener(e -> showHistory());
 
@@ -1434,13 +1473,13 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        help.addActionListener(e -> showHelp());
 	        menu.addActionListener(e -> showMenu());
 	
-	        JLabel scoreTitle = new JLabel("Score:");
+	        JLabel scoreTitle = new JLabel(safeT("lbl.score","Score:"));
 	        scoreTitle.setForeground(TEXT_PRIMARY);
-	        scoreTitle.setFont(new Font("Georgia", Font.BOLD, 14));
+	        scoreTitle.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
 	
-	        JLabel livesLbl = new JLabel("Lives:");
+	        JLabel livesLbl = new JLabel(safeT("lbl.lives","Lives:"));
 	        livesLbl.setForeground(TEXT_PRIMARY);
-	        livesLbl.setFont(new Font("Georgia", Font.BOLD, 14));
+	        livesLbl.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
 	
 	        JPanel sharedBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
 	        sharedBar.setOpaque(false);
@@ -1468,7 +1507,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	  
 
 
-	        rightStats.setFont(new Font("Georgia", Font.BOLD, 14));
+	        rightStats.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
 	        rightStats.setForeground(TEXT_PRIMARY);
 	        refreshRightStats();
 	        bar.add(rightStats);
@@ -1479,7 +1518,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    private void refreshRightStats() {
 	        int idx = p1Turn ? 0 : 1;
 	        String currentName = p1Turn ? tfP1.getText().trim() : tfP2.getText().trim();
-	        rightStats.setText(currentName + " • Revealed: " + revealedCount[idx] + "  |  Flags: " + flagsCount[idx]);
+	        rightStats.setText(currentName + " " + safeT("status.revealedBullet","• Revealed: ") + revealedCount[idx] + " " + safeT("status.flagsSep","| Flags: ") + flagsCount[idx]);
 	    }
 	
 	    /* ------------------------------ GAME LOGIC (unchanged) ------------------------------ */
@@ -1489,7 +1528,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	        String p1 = tfP1.getText().trim();
 	        String p2 = tfP2.getText().trim();
-	        turnLabel.setText("Turn: " + (p1Turn ? p1 : p2));
+	        turnLabel.setText(safeT("status.turnPrefix",safeT("status.turnPrefix", "Turn: ")) + (p1Turn ? p1 : p2));
 	        refreshRightStats();
 
 	        int active = p1Turn ? 0 : 1;
@@ -1507,8 +1546,10 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	
 	    private void showHelp() {
+        currentScreen = SCREEN_MENU; // help is a dialog/popup
+
 	        JOptionPane.showMessageDialog(this,
-	                "Controls:\n" +
+	                safeT("help.controlsHeader","Controls:\n") +
 	                        "• Left-click: Reveal cell\n" +
 	                        "• Right-click: Toggle flag\n" +
 	                        "• Numbers show adjacent mines\n" +
@@ -1658,8 +1699,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        JOptionPane.showMessageDialog(
 	                                this,
 	                                "Not enough points to activate this Question cell.\n" +
-	                                "Required: " + baseCost + " points.",
-	                                "Insufficient Points",
+	                                safeT("msg.requiredPrefix","Required: ") + baseCost + safeT("msg.pointsSuffix"," points."),
+	                                safeT("msg.insufficientPointsTitle","Insufficient Points"),
 	                                JOptionPane.WARNING_MESSAGE
 	                        );
 	                        break;
@@ -1673,8 +1714,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                    if (q == null) {
 	                        JOptionPane.showMessageDialog(
 	                                this,
-	                                "No questions available for difficulty: " + diffKey,
-	                                "Question Cell",
+	                                safeT("msg.noQuestionsForDifficulty","No questions available for difficulty: ") + diffKey,
+	                                safeT("cell.question.title","Question Cell"),
 	                                JOptionPane.WARNING_MESSAGE
 	                        );
 	                        break;
@@ -1682,11 +1723,11 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	                    int choice = JOptionPane.showConfirmDialog(
 	                            this,
-	                            "This is a Question cell.\n" +
-	                            "Random difficulty: " + diffKey.toUpperCase() + "\n" +
-	                            "Using it costs " + baseCost + " points.\n" +
-	                            "Do you want to continue?",
-	                            "Question Cell",
+	                            safeT("cell.question.intro","This is a Question cell.\n") +
+	                            safeT("cell.question.randomDifficulty","Random difficulty: ") + diffKey.toUpperCase() + "\n" +
+	                            safeT("cell.question.costPrefix","Using it costs ") + baseCost + safeT("msg.pointsSuffix"," points.") + "\n" +
+	                            safeT("msg.doYouWantToContinue","Do you want to continue?"),
+	                            safeT("cell.question.title","Question Cell"),
 	                            JOptionPane.YES_NO_OPTION
 	                    );
 
@@ -1739,8 +1780,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                        JOptionPane.showMessageDialog(
 	                                this,
 	                                "Not enough points to activate this Surprise cell.\n" +
-	                                "Required: " + baseCost + " points.",
-	                                "Insufficient Points",
+	                                safeT("msg.requiredPrefix","Required: ") + baseCost + safeT("msg.pointsSuffix"," points."),
+	                                safeT("msg.insufficientPointsTitle","Insufficient Points"),
 	                                JOptionPane.WARNING_MESSAGE
 	                        );
 	                        break;
@@ -1748,11 +1789,11 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	                    int choice = JOptionPane.showConfirmDialog(
 	                            this,
-	                            "This is a Surprise cell.\n" +
-	                            "Activating it costs " + baseCost + " points.\n" +
-	                            "There is a 50/50 chance for a good or bad surprise.\n" +
-	                            "Do you want to activate it?",
-	                            "Surprise Cell",
+	                            safeT("cell.surprise.intro","This is a Surprise cell.\n") +
+	                            safeT("cell.surprise.costPrefix","Activating it costs ") + baseCost + safeT("msg.pointsSuffix"," points.") + "\n" +
+	                            safeT("cell.surprise.odds","There is a 50/50 chance for a good or bad surprise.\n") +
+	                            safeT("msg.doYouWantToActivate","Do you want to activate it?"),
+	                            safeT("cell.surprise.title","Surprise Cell"),
 	                            JOptionPane.YES_NO_OPTION
 	                    );
 
@@ -1766,8 +1807,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                            gainSharedLives(1);
 	                            JOptionPane.showMessageDialog(
 	                                    this,
-	                                    "Good surprise! 🎁\n+" + magnitude + " points and +1 life.",
-	                                    "Good Surprise",
+	                                    safeT("surprise.goodPrefix","Good surprise! 🎁\n+") + magnitude + safeT("surprise.goodSuffix"," points and +1 life."),
+	                                    safeT("surprise.goodTitle","Good Surprise"),
 	                                    JOptionPane.INFORMATION_MESSAGE
 	                            );
 	                        } else {
@@ -1775,8 +1816,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	                            loseSharedLives(1);
 	                            JOptionPane.showMessageDialog(
 	                                    this,
-	                                    "Bad surprise! 💀\n-" + magnitude + " points and -1 life.",
-	                                    "Bad Surprise",
+	                                    safeT("surprise.badPrefix","Bad surprise! 💀\n-") + magnitude + safeT("surprise.badSuffix"," points and -1 life."),
+	                                    safeT("surprise.badTitle","Bad Surprise"),
 	                                    JOptionPane.WARNING_MESSAGE
 	                            );
 	                        }
@@ -1822,7 +1863,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            String winner = (ownerIdx == 0 ? tfP1.getText().trim() : tfP2.getText().trim());
 	            gameHistory.add(new String[]{
 	                    winner,
-	                    "Cleared Board",
+	                    safeT("dlg.clearedBoard","Cleared Board"),
 	                    String.valueOf(sharedPoints),
 	                    currentDifficulty.name(),
 	                    String.valueOf(java.time.LocalDateTime.now())
@@ -1834,7 +1875,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            JOptionPane.showMessageDialog(
 	                    this,
 	                    "🎉 Congratulations! You cleared the board!",
-	                    "Board Cleared",
+	                    safeT("dlg.boardCleared","Board Cleared"),
 	                    JOptionPane.INFORMATION_MESSAGE
 	            );
 
@@ -1894,7 +1935,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            case SURPRISE -> {
 	                if (specialUsed) {
 	                    // 🔒 USED surprise — text only, muted color
-	                    btn.setText("USED");
+	                    btn.setText(safeT("cell.used","USED"));
 	                    btn.setForeground(new Color(180, 180, 180));
 	                } else {
 	                    // normal (not used yet) surprise shows the spikes icon
@@ -1905,7 +1946,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            case QUESTION -> {
 	                if (specialUsed) {
 	                    // 🔒 USED question — text only, slightly bluish
-	                    btn.setText("USED");
+	                    btn.setText(safeT("cell.used","USED"));
 	                    btn.setForeground(new Color(190, 200, 255));
 	                } else {
 	                    // normal (not used yet) question shows question icon
@@ -2116,15 +2157,15 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	        // ---------------- apply the result ----------------
 	        if (correct) {
-	            String msg = "Correct answer!";
+	            String msg = safeT("trivia.correct","Correct answer!");
 	            if (deltaPts != 0)  msg += " " + (deltaPts > 0 ? "+" : "") + deltaPts + " pts.";
 	            if (deltaLife != 0) msg += " " + (deltaLife > 0 ? "+" : "") + deltaLife + " ♥.";
-	            JOptionPane.showMessageDialog(this, msg, "Trivia Result", JOptionPane.INFORMATION_MESSAGE);
+	            JOptionPane.showMessageDialog(this, msg, safeT("dlg.triviaResult","Trivia Result"), JOptionPane.INFORMATION_MESSAGE);
 	        } else {
 	            String msg = "Wrong answer!";
 	            if (deltaPts != 0)  msg += " " + (deltaPts > 0 ? "+" : "") + deltaPts + " pts.";
 	            if (deltaLife != 0) msg += " " + (deltaLife > 0 ? "+" : "") + deltaLife + " ♥.";
-	            JOptionPane.showMessageDialog(this, msg, "Trivia Result", JOptionPane.WARNING_MESSAGE);
+	            JOptionPane.showMessageDialog(this, msg, safeT("dlg.triviaResult","Trivia Result"), JOptionPane.WARNING_MESSAGE);
 	        }
 
 	        if (deltaPts != 0) {
@@ -2218,7 +2259,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            }
 
 	            // 3) Ask if they want a new game
-	            String message = "Game Over – Final Score: " + sharedPoints
+	            String message = safeT("msg.gameOverPrefix", "Game Over – Final Score: ") + sharedPoints
 	                    + "\n\nDo you want to start a new game?";
 
 	            int choice = JOptionPane.showConfirmDialog(
@@ -2244,8 +2285,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            String path = getHistoryPath();
 	            if (path == null) {
 	                JOptionPane.showMessageDialog(this,
-	                        "Could not determine history file path.",
-	                        "Export Error",
+	                        safeT("history.pathError",safeT("export.errNoPath", "Could not determine history file path.")),
+	                        safeT("history.exportError",safeT("export.errTitle", "Export Error")),
 	                        JOptionPane.ERROR_MESSAGE);
 	                return;
 	            }
@@ -2270,14 +2311,14 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 	            JOptionPane.showMessageDialog(this,
 	                    "History exported successfully to:\n" + file.getAbsolutePath(),
-	                    "Export Complete",
+	                    safeT("history.exportComplete",safeT("export.okTitle", "Export Complete")),
 	                    JOptionPane.INFORMATION_MESSAGE);
 
 	        } catch (Exception ex) {
 	            ex.printStackTrace();
 	            JOptionPane.showMessageDialog(this,
-	                    "Error writing CSV: " + ex.getMessage(),
-	                    "Export Error",
+	                    safeT("history.writeErrorPrefix","Error writing CSV: ") + ex.getMessage(),
+	                    safeT("history.exportError",safeT("export.errTitle", "Export Error")),
 	                    JOptionPane.ERROR_MESSAGE);
 	        }
 	    }
@@ -2294,7 +2335,7 @@ private JPanel[] boardWrappers = new JPanel[2];
 	        btn.setContentAreaFilled(false);
 	        btn.setOpaque(false);
 	        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-	        btn.setToolTipText("Restart Game");
+	        btn.setToolTipText(safeT("restart.title",safeT("restart.title", "Restart Game")));
 
 	        btn.addActionListener(e -> confirmRestartGame());
 
@@ -2307,8 +2348,8 @@ private JPanel[] boardWrappers = new JPanel[2];
 	    private void confirmRestartGame() {
 	        int r = JOptionPane.showConfirmDialog(
 	            this,
-	            "Are you sure you want to restart the game?\nCurrent progress will be lost.",
-	            "Restart Game",
+	            safeT("restart.confirm",safeT("restart.confirm", "Are you sure you want to restart the game?Current progress will be lost.")),
+	            safeT("restart.title",safeT("restart.title", "Restart Game")),
 	            JOptionPane.YES_NO_OPTION,
 	            JOptionPane.WARNING_MESSAGE
 	        );
@@ -2352,51 +2393,45 @@ private JPanel[] boardWrappers = new JPanel[2];
 
 
 	    
-	    private void showHistory() {
-	        if (gameHistory.isEmpty()) {
-	            JOptionPane.showMessageDialog(this,
-	                    "No games played yet.",
-	                    "Game History",
-	                    JOptionPane.INFORMATION_MESSAGE);
-	            return;
-	        }
+	   
 
-	        // Build text preview
-	        StringBuilder sb = new StringBuilder();
-	        sb.append("Player | Result | Score | Difficulty | Date\n");
-	        sb.append("--------------------------------------------------------\n");
-
-	        for (String[] row : gameHistory) {
-	            sb.append(row[0]).append(" | ")
-	              .append(row[1]).append(" | ")
-	              .append(row[2]).append(" | ")
-	              .append(row[3]).append(" | ")
-	              .append(row[4]).append("\n");
-	        }
-
-	        JTextArea txt = new JTextArea(sb.toString());
-	        txt.setEditable(false);
-	        txt.setFont(new Font("Georgia", Font.PLAIN, 15));
-
-	        JScrollPane sp = new JScrollPane(txt);
-	        sp.setPreferredSize(new Dimension(550, 350));
-
-	        // Buttons: OK or Export to Excel (CSV)
-	        int choice = JOptionPane.showOptionDialog(
-	                this,
-	                sp,
-	                "Game History",
-	                JOptionPane.YES_NO_OPTION,
-	                JOptionPane.INFORMATION_MESSAGE,
-	                null,
-	                new String[]{"Export to Excel", "Close"},
-	                "Close"
-	        );
-
-	        if (choice == 0) {
-	            exportHistoryToCSV();
-	        }
+	    /** Small helper for themed buttons */
+	    private void styleThemedButton(JButton b, Color bg, Color fg) {
+	        b.setBackground(bg);
+	        b.setForeground(fg);
+	        b.setFocusPainted(false);
+	        b.setBorder(BorderFactory.createCompoundBorder(
+	                BorderFactory.createLineBorder(new Color(255, 255, 255, 80), 1),
+	                BorderFactory.createEmptyBorder(10, 18, 10, 18)
+	        ));
 	    }
+
+
+	    // --- helpers (add inside MineSweeperPrototype class) ---
+	    private static String safe(String[] a, int idx) {
+	        if (a == null || idx < 0 || idx >= a.length || a[idx] == null) return "";
+	        return a[idx];
+	    }
+
+	    private String localizeDifficulty(String raw) {
+	        if (raw == null) return "";
+	        String u = raw.trim().toUpperCase();
+	        // Supports values like "EASY" / "MEDIUM" / "HARD"
+	        if (u.contains("EASY"))   return safeT("diff.easy", "Easy");
+	        if (u.contains("MEDIUM")) return safeT("diff.medium", "Medium");
+	        if (u.contains("HARD"))   return safeT("diff.hard", "Hard");
+	        return raw;
+	    }
+
+	    private String formatDateForUI(String raw) {
+	        // If it's already nice, keep it.
+	        // If your date is ISO like 2026-01-07T15:25:13..., trim milliseconds.
+	        if (raw == null) return "";
+	        int dot = raw.indexOf('.');
+	        if (dot > 0) return raw.substring(0, dot);
+	        return raw;
+	    }
+
 
 	    private void gainSharedLives(int n) {
 	        if (n <= 0) return;
@@ -2483,6 +2518,211 @@ private JPanel[] boardWrappers = new JPanel[2];
 	            }
 	        }
 	    }
+	    private void showHistory() {
+	        if (gameHistory == null || gameHistory.isEmpty()) {
+	            JOptionPane.showMessageDialog(
+	                    this,
+	                    safeT("history.empty", "No games played yet."),
+	                    safeT("history.title", "Game History"),
+	                    JOptionPane.INFORMATION_MESSAGE
+	            );
+	            return;
+	        }
+
+	        // ===== Theme colors (same as QuestionsWizardFrame) =====
+	        final Color BTN_GREEN = new Color(40, 160, 90);
+	        final Color BTN_OLIVE = new Color(85, 110, 70);
+
+	        // ===== Columns (localized) =====
+	        String[] cols = new String[] {
+	                safeT("history.col.player", "Player"),
+	                safeT("history.col.result", "Result"),
+	                safeT("history.col.score", "Score"),
+	                safeT("history.col.difficulty", "Difficulty"),
+	                safeT("history.col.date", "Date")
+	        };
+
+	        // ===== Data =====
+	        Object[][] data = new Object[gameHistory.size()][5];
+	        for (int i = 0; i < gameHistory.size(); i++) {
+	            String[] r = gameHistory.get(i);
+	            data[i][0] = safe(r, 0);
+	            data[i][1] = safe(r, 1);
+	            data[i][2] = safe(r, 2);
+	            data[i][3] = localizeDifficulty(safe(r, 3));
+	            data[i][4] = formatDateForUI(safe(r, 4));
+	        }
+
+	        DefaultTableModel model = new DefaultTableModel(data, cols) {
+	            @Override public boolean isCellEditable(int row, int column) { return false; }
+	        };
+
+	        JTable table = new JTable(model);
+	        styleTableLikeQuestionsFrame(table);
+	        table.setFillsViewportHeight(true);
+
+	        JScrollPane sp = new JScrollPane(table);
+	        sp.setBorder(BorderFactory.createEmptyBorder());
+	        sp.setOpaque(false);
+	        sp.getViewport().setOpaque(false);
+
+	        // ===== Dialog UI (same layout style as QuestionsWizardFrame) =====
+	        JDialog dlg = new JDialog(this, safeT("history.title", "Game History"), true);
+	        dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+	        Rectangle bounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+	        dlg.setResizable(true);
+	        dlg.setBounds(bounds);;
+	        dlg.setMinimumSize(new Dimension(1100, 650));
+	        dlg.setLocationRelativeTo(this);
+
+	        JPanel bg = new BackgroundImagePanel("assets/forest/bg_forest.jpg");
+	        bg.setLayout(new BorderLayout());
+	        bg.setBorder(new javax.swing.border.EmptyBorder(35, 60, 35, 60));
+
+	        JPanel glass = new FrostedCardPanel();
+	        glass.setLayout(new BorderLayout(18, 18));
+	        glass.setBorder(new javax.swing.border.EmptyBorder(18, 18, 18, 18));
+
+	        JLabel title = new JLabel(safeT("history.title", "Game History"), SwingConstants.CENTER);
+	        title.setFont(new Font("Georgia", Font.BOLD, 28));
+	        title.setForeground(new Color(210, 255, 235));
+	        glass.add(title, BorderLayout.NORTH);
+
+	        glass.add(sp, BorderLayout.CENTER);
+
+	        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 8));
+	        bottom.setOpaque(false);
+
+	        JButton exportBtn = pillButtonLikeQuestionsFrame(safeT("history.export", "Export CSV"), BTN_GREEN);
+	        JButton closeBtn  = pillButtonLikeQuestionsFrame(safeT("btn.close", "Back"), BTN_OLIVE);
+	        closeBtn.setPreferredSize(new Dimension(260, 52));
+
+	        exportBtn.addActionListener(e -> exportHistoryToCSV());
+	        closeBtn.addActionListener(e -> dlg.dispose());
+
+	        bottom.add(exportBtn);
+	        bottom.add(closeBtn);
+
+	        glass.add(bottom, BorderLayout.SOUTH);
+	        bg.add(glass, BorderLayout.CENTER);
+
+	        dlg.setContentPane(bg);
+	        SysData.applyGlobalFont(dlg);
+
+	        dlg.setVisible(true);
+	    }
+	    private void styleTableLikeQuestionsFrame(JTable t) {
+	        t.setRowHeight(34);
+	        t.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+	        t.setForeground(new Color(235, 255, 245));
+	        t.setBackground(new Color(10, 15, 15, 180));
+	        t.setSelectionBackground(new Color(60, 90, 80));
+	        t.setSelectionForeground(Color.WHITE);
+	        t.setShowGrid(false);
+	        t.setFillsViewportHeight(true);
+
+	        JTableHeader header = t.getTableHeader();
+	        header.setDefaultRenderer((tbl, value, isSelected, hasFocus, row, col) -> {
+	            JLabel l = new JLabel(value == null ? "" : value.toString());
+	            l.setOpaque(true);
+	           boolean he = (SysData.getI18n() != null && SysData.getI18n().isHebrew());
+	            l.setFont(new Font(he ? "SansSerif" : "Georgia", Font.BOLD, 15));
+	            l.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+	            l.setBackground(new Color(35, 60, 45));
+	            l.setForeground(new Color(245, 255, 250));
+	            return l;
+	        });
+	        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 38));
+	    }
+	    private JButton pillButtonLikeQuestionsFrame(String text, Color bg) {
+	        JButton base = new JButton(text);
+	        base.setFont(new Font("Georgia", Font.BOLD, 16));
+	        base.setForeground(Color.WHITE);
+	        base.setFocusPainted(false);
+	        base.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+	        base.setBorderPainted(false);
+	        base.setContentAreaFilled(false);
+	        base.setOpaque(false);
+	        base.setPreferredSize(new Dimension(190, 52));
+
+	        base.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+	        base.setBorder(new javax.swing.border.EmptyBorder(10, 18, 10, 18));
+
+	        PaintedButton painted = new PaintedButton(base, bg);
+	        painted.addChangeListener(e -> painted.repaint());
+
+	        return painted;
+	    }
+
+	    private static class BackgroundImagePanel extends JPanel {
+	        private final Image img;
+	        public BackgroundImagePanel(String path) {
+	            ImageIcon ic = new ImageIcon(path);
+	            this.img = ic.getImage();
+	            setOpaque(true);
+	        }
+	        @Override
+	        protected void paintComponent(Graphics g) {
+	            super.paintComponent(g);
+	            if (img != null) g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+	            Graphics2D g2 = (Graphics2D) g.create();
+	            g2.setColor(new Color(0, 0, 0, 110));
+	            g2.fillRect(0, 0, getWidth(), getHeight());
+	            g2.dispose();
+	        }
+	    }
+
+	    private static class FrostedCardPanel extends JPanel {
+	        public FrostedCardPanel() { setOpaque(false); }
+	        @Override protected void paintComponent(Graphics g) {
+	            super.paintComponent(g);
+	            Graphics2D g2 = (Graphics2D) g.create();
+	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+	            g2.setColor(new Color(15, 25, 20, 200));
+	            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 26, 26);
+	            g2.setColor(new Color(170, 255, 255, 120));
+	            g2.setStroke(new BasicStroke(2f));
+	            g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, 24, 24);
+	            g2.dispose();
+	        }
+	    }
+
+	    private static class PaintedButton extends JButton {
+	        private final Color base;
+	        public PaintedButton(JButton delegate, Color base) {
+	            super(delegate.getText());
+	            this.base = base;
+	            setFont(delegate.getFont());
+	            setForeground(delegate.getForeground());
+	            setFocusPainted(false);
+	            setBorderPainted(false);
+	            setContentAreaFilled(false);
+	            setCursor(delegate.getCursor());
+	            setPreferredSize(delegate.getPreferredSize());
+	            setBorder(delegate.getBorder());
+	        }
+	        @Override
+	        protected void paintComponent(Graphics g) {
+	            Graphics2D g2 = (Graphics2D) g.create();
+	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+	            Color bg = base;
+	            if (getModel().isPressed()) bg = bg.darker();
+	            else if (getModel().isRollover()) bg = bg.brighter();
+
+	            g2.setColor(bg);
+	            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+
+	            g2.setColor(new Color(255, 255, 255, 70));
+	            g2.setStroke(new BasicStroke(2f));
+	            g2.drawRoundRect(1, 1, getWidth()-2, getHeight()-2, 18, 18);
+
+	            g2.dispose();
+	            super.paintComponent(g);
+	        }
+	    }
+
+
 	
 	    /* ------------------------------ MAIN ------------------------------ */
 	    public static void main(String[] args) {

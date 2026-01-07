@@ -30,6 +30,8 @@ public class SettingsFrame extends JFrame {
         setLocationRelativeTo(null);
 
         setContentPane(buildContent());
+        SysData.applyGlobalFont(this);
+
     }
 
     private JComponent buildContent() {
@@ -43,7 +45,7 @@ public class SettingsFrame extends JFrame {
 
         JLabel title = new JLabel(safeT("settings.title", "GENERAL SETTINGS"), SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        title.setFont(new Font("Georgia", Font.BOLD, 30));
+        title.setFont(uiFont(Font.BOLD, 30));
         title.setForeground(new Color(190, 255, 220));
         glass.add(title);
         glass.add(Box.createVerticalStrut(20));
@@ -149,6 +151,18 @@ public class SettingsFrame extends JFrame {
             controller.setLanguage(lang);
             SysData.setLanguage(lang);
 
+            // ✅ עדכון כיוון
+            if (lang == Language.HE) {
+                JFrame.setDefaultLookAndFeelDecorated(true);
+                applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+            } else {
+                applyComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+            }
+
+           
+
+
+
             // ✅ Save theme + apply immediately
             AppTheme theme = (cbTheme.getSelectedIndex() == 0) ? AppTheme.DARK : AppTheme.LIGHT;
             controller.setTheme(theme);
@@ -157,6 +171,7 @@ public class SettingsFrame extends JFrame {
             ThemeManager.refreshAllWindows();
 
             if (onSaved != null) onSaved.run();
+            dispose();
 
             JOptionPane.showMessageDialog(this,
                     safeT("msg.saved", "Settings saved."),
@@ -228,14 +243,14 @@ public class SettingsFrame extends JFrame {
     private JCheckBox themedCheck(String text, boolean selected) {
         JCheckBox cb = new JCheckBox(text, selected);
         cb.setOpaque(false);
-        cb.setFont(new Font("Georgia", Font.BOLD, 16));
+        cb.setFont(uiFont(Font.BOLD, 16));
         cb.setForeground(TEXT);
         cb.setFocusPainted(false);
         return cb;
     }
 
     private void styleCombo(JComboBox<String> cb) {
-        cb.setFont(new Font("Georgia", Font.PLAIN, 15));
+    	cb.setFont(uiFont(Font.PLAIN, 15));
         cb.setBackground(Color.WHITE);
         cb.setForeground(new Color(20, 35, 35));
         cb.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
@@ -252,17 +267,26 @@ public class SettingsFrame extends JFrame {
     private void addRow(JPanel p, GridBagConstraints gc, int y, String label, JComponent comp) {
         gc.gridx = 0; gc.gridy = y; gc.gridwidth = 1; gc.weightx = 0; gc.anchor = GridBagConstraints.LINE_END;
         JLabel l = new JLabel(label);
-        l.setFont(new Font("Georgia", Font.BOLD, 16));
+        l.setFont(uiFont(Font.BOLD, 16));
         l.setForeground(TEXT);
         p.add(l, gc);
 
         gc.gridx = 1; gc.weightx = 1; gc.anchor = GridBagConstraints.LINE_START;
         p.add(comp, gc);
     }
+    private Font uiFont(int style, int size) {
+        Font f = new Font("Georgia", style, size);
 
+        // אם זו עברית והפונט לא יודע להציג עברית -> נחליף לפונט שתומך
+        boolean isHebrew = SysData.getI18n() != null && SysData.getI18n().isHebrew();
+        if (isHebrew && f.canDisplayUpTo("אבגדהוזחטיכלמנסעפצקרשת") != -1) {
+            f = new Font("Arial", style, size); // או "Tahoma" / "Segoe UI" / "David"
+        }
+        return f;
+    }
     private JButton frostedButton(String text) {
         JButton b = new JButton(text);
-        b.setFont(new Font("Georgia", Font.BOLD, 18));
+        b.setFont(uiFont(Font.BOLD, 18));
         b.setForeground(new Color(200, 255, 230));
         b.setFocusPainted(false);
         b.setContentAreaFilled(false);
