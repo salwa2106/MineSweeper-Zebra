@@ -1,6 +1,7 @@
 package View;
 
 import Model.Question;
+import Model.SysData;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -47,6 +48,8 @@ public class QuestionsWizardFrame extends JFrame {
         setLocationRelativeTo(null);
 
         setContentPane(buildUI());
+        SysData.applyGlobalFont(this);
+
     }
 
     private JComponent buildUI() {
