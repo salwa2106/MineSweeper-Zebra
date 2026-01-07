@@ -11,6 +11,9 @@ import Model.Board;
 	
 	import javax.swing.*;
 import javax.swing.plaf.LayerUI;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 
 import java.awt.*;
 	import java.awt.event.*;
@@ -2390,53 +2393,45 @@ private JPanel buildSettingsScreen() {
 
 
 	    
-	    private void showHistory() {
-        currentScreen = SCREEN_MENU; // history is a dialog/popup
+	   
 
-	        if (gameHistory.isEmpty()) {
-	            JOptionPane.showMessageDialog(this,
-	                    safeT("history.empty",safeT("history.empty", "No games played yet.")),
-	                    safeT("history.title",safeT("history.title", "Game History")),
-	                    JOptionPane.INFORMATION_MESSAGE);
-	            return;
-	        }
-
-	        // Build text preview
-	        StringBuilder sb = new StringBuilder();
-	        sb.append("Player | Result | Score | Difficulty | Date\n");
-	        sb.append("--------------------------------------------------------\n");
-
-	        for (String[] row : gameHistory) {
-	            sb.append(row[0]).append(" | ")
-	              .append(row[1]).append(" | ")
-	              .append(row[2]).append(" | ")
-	              .append(row[3]).append(" | ")
-	              .append(row[4]).append("\n");
-	        }
-
-	        JTextArea txt = new JTextArea(sb.toString());
-	        txt.setEditable(false);
-	        txt.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.PLAIN, 15));
-
-	        JScrollPane sp = new JScrollPane(txt);
-	        sp.setPreferredSize(new Dimension(550, 350));
-
-	        // Buttons: OK or Export to Excel (CSV)
-	        int choice = JOptionPane.showOptionDialog(
-	                this,
-	                sp,
-	                safeT("history.title",safeT("history.title", "Game History")),
-	                JOptionPane.YES_NO_OPTION,
-	                JOptionPane.INFORMATION_MESSAGE,
-	                null,
-	                new String[]{safeT("history.export",safeT("history.export", "Export to Excel")), safeT("btn.close",safeT("btn.close",safeT("btn.close", "Close")))},
-	                safeT("btn.close",safeT("btn.close", "Close"))
-	        );
-
-	        if (choice == 0) {
-	            exportHistoryToCSV();
-	        }
+	    /** Small helper for themed buttons */
+	    private void styleThemedButton(JButton b, Color bg, Color fg) {
+	        b.setBackground(bg);
+	        b.setForeground(fg);
+	        b.setFocusPainted(false);
+	        b.setBorder(BorderFactory.createCompoundBorder(
+	                BorderFactory.createLineBorder(new Color(255, 255, 255, 80), 1),
+	                BorderFactory.createEmptyBorder(10, 18, 10, 18)
+	        ));
 	    }
+
+
+	    // --- helpers (add inside MineSweeperPrototype class) ---
+	    private static String safe(String[] a, int idx) {
+	        if (a == null || idx < 0 || idx >= a.length || a[idx] == null) return "";
+	        return a[idx];
+	    }
+
+	    private String localizeDifficulty(String raw) {
+	        if (raw == null) return "";
+	        String u = raw.trim().toUpperCase();
+	        // Supports values like "EASY" / "MEDIUM" / "HARD"
+	        if (u.contains("EASY"))   return safeT("diff.easy", "Easy");
+	        if (u.contains("MEDIUM")) return safeT("diff.medium", "Medium");
+	        if (u.contains("HARD"))   return safeT("diff.hard", "Hard");
+	        return raw;
+	    }
+
+	    private String formatDateForUI(String raw) {
+	        // If it's already nice, keep it.
+	        // If your date is ISO like 2026-01-07T15:25:13..., trim milliseconds.
+	        if (raw == null) return "";
+	        int dot = raw.indexOf('.');
+	        if (dot > 0) return raw.substring(0, dot);
+	        return raw;
+	    }
+
 
 	    private void gainSharedLives(int n) {
 	        if (n <= 0) return;
@@ -2523,6 +2518,211 @@ private JPanel buildSettingsScreen() {
 	            }
 	        }
 	    }
+	    private void showHistory() {
+	        if (gameHistory == null || gameHistory.isEmpty()) {
+	            JOptionPane.showMessageDialog(
+	                    this,
+	                    safeT("history.empty", "No games played yet."),
+	                    safeT("history.title", "Game History"),
+	                    JOptionPane.INFORMATION_MESSAGE
+	            );
+	            return;
+	        }
+
+	        // ===== Theme colors (same as QuestionsWizardFrame) =====
+	        final Color BTN_GREEN = new Color(40, 160, 90);
+	        final Color BTN_OLIVE = new Color(85, 110, 70);
+
+	        // ===== Columns (localized) =====
+	        String[] cols = new String[] {
+	                safeT("history.col.player", "Player"),
+	                safeT("history.col.result", "Result"),
+	                safeT("history.col.score", "Score"),
+	                safeT("history.col.difficulty", "Difficulty"),
+	                safeT("history.col.date", "Date")
+	        };
+
+	        // ===== Data =====
+	        Object[][] data = new Object[gameHistory.size()][5];
+	        for (int i = 0; i < gameHistory.size(); i++) {
+	            String[] r = gameHistory.get(i);
+	            data[i][0] = safe(r, 0);
+	            data[i][1] = safe(r, 1);
+	            data[i][2] = safe(r, 2);
+	            data[i][3] = localizeDifficulty(safe(r, 3));
+	            data[i][4] = formatDateForUI(safe(r, 4));
+	        }
+
+	        DefaultTableModel model = new DefaultTableModel(data, cols) {
+	            @Override public boolean isCellEditable(int row, int column) { return false; }
+	        };
+
+	        JTable table = new JTable(model);
+	        styleTableLikeQuestionsFrame(table);
+	        table.setFillsViewportHeight(true);
+
+	        JScrollPane sp = new JScrollPane(table);
+	        sp.setBorder(BorderFactory.createEmptyBorder());
+	        sp.setOpaque(false);
+	        sp.getViewport().setOpaque(false);
+
+	        // ===== Dialog UI (same layout style as QuestionsWizardFrame) =====
+	        JDialog dlg = new JDialog(this, safeT("history.title", "Game History"), true);
+	        dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+	        Rectangle bounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+	        dlg.setResizable(true);
+	        dlg.setBounds(bounds);;
+	        dlg.setMinimumSize(new Dimension(1100, 650));
+	        dlg.setLocationRelativeTo(this);
+
+	        JPanel bg = new BackgroundImagePanel("assets/forest/bg_forest.jpg");
+	        bg.setLayout(new BorderLayout());
+	        bg.setBorder(new javax.swing.border.EmptyBorder(35, 60, 35, 60));
+
+	        JPanel glass = new FrostedCardPanel();
+	        glass.setLayout(new BorderLayout(18, 18));
+	        glass.setBorder(new javax.swing.border.EmptyBorder(18, 18, 18, 18));
+
+	        JLabel title = new JLabel(safeT("history.title", "Game History"), SwingConstants.CENTER);
+	        title.setFont(new Font("Georgia", Font.BOLD, 28));
+	        title.setForeground(new Color(210, 255, 235));
+	        glass.add(title, BorderLayout.NORTH);
+
+	        glass.add(sp, BorderLayout.CENTER);
+
+	        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 8));
+	        bottom.setOpaque(false);
+
+	        JButton exportBtn = pillButtonLikeQuestionsFrame(safeT("history.export", "Export CSV"), BTN_GREEN);
+	        JButton closeBtn  = pillButtonLikeQuestionsFrame(safeT("btn.close", "Back"), BTN_OLIVE);
+	        closeBtn.setPreferredSize(new Dimension(260, 52));
+
+	        exportBtn.addActionListener(e -> exportHistoryToCSV());
+	        closeBtn.addActionListener(e -> dlg.dispose());
+
+	        bottom.add(exportBtn);
+	        bottom.add(closeBtn);
+
+	        glass.add(bottom, BorderLayout.SOUTH);
+	        bg.add(glass, BorderLayout.CENTER);
+
+	        dlg.setContentPane(bg);
+	        SysData.applyGlobalFont(dlg);
+
+	        dlg.setVisible(true);
+	    }
+	    private void styleTableLikeQuestionsFrame(JTable t) {
+	        t.setRowHeight(34);
+	        t.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+	        t.setForeground(new Color(235, 255, 245));
+	        t.setBackground(new Color(10, 15, 15, 180));
+	        t.setSelectionBackground(new Color(60, 90, 80));
+	        t.setSelectionForeground(Color.WHITE);
+	        t.setShowGrid(false);
+	        t.setFillsViewportHeight(true);
+
+	        JTableHeader header = t.getTableHeader();
+	        header.setDefaultRenderer((tbl, value, isSelected, hasFocus, row, col) -> {
+	            JLabel l = new JLabel(value == null ? "" : value.toString());
+	            l.setOpaque(true);
+	           boolean he = (SysData.getI18n() != null && SysData.getI18n().isHebrew());
+	            l.setFont(new Font(he ? "SansSerif" : "Georgia", Font.BOLD, 15));
+	            l.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+	            l.setBackground(new Color(35, 60, 45));
+	            l.setForeground(new Color(245, 255, 250));
+	            return l;
+	        });
+	        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 38));
+	    }
+	    private JButton pillButtonLikeQuestionsFrame(String text, Color bg) {
+	        JButton base = new JButton(text);
+	        base.setFont(new Font("Georgia", Font.BOLD, 16));
+	        base.setForeground(Color.WHITE);
+	        base.setFocusPainted(false);
+	        base.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+	        base.setBorderPainted(false);
+	        base.setContentAreaFilled(false);
+	        base.setOpaque(false);
+	        base.setPreferredSize(new Dimension(190, 52));
+
+	        base.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+	        base.setBorder(new javax.swing.border.EmptyBorder(10, 18, 10, 18));
+
+	        PaintedButton painted = new PaintedButton(base, bg);
+	        painted.addChangeListener(e -> painted.repaint());
+
+	        return painted;
+	    }
+
+	    private static class BackgroundImagePanel extends JPanel {
+	        private final Image img;
+	        public BackgroundImagePanel(String path) {
+	            ImageIcon ic = new ImageIcon(path);
+	            this.img = ic.getImage();
+	            setOpaque(true);
+	        }
+	        @Override
+	        protected void paintComponent(Graphics g) {
+	            super.paintComponent(g);
+	            if (img != null) g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
+	            Graphics2D g2 = (Graphics2D) g.create();
+	            g2.setColor(new Color(0, 0, 0, 110));
+	            g2.fillRect(0, 0, getWidth(), getHeight());
+	            g2.dispose();
+	        }
+	    }
+
+	    private static class FrostedCardPanel extends JPanel {
+	        public FrostedCardPanel() { setOpaque(false); }
+	        @Override protected void paintComponent(Graphics g) {
+	            super.paintComponent(g);
+	            Graphics2D g2 = (Graphics2D) g.create();
+	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+	            g2.setColor(new Color(15, 25, 20, 200));
+	            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 26, 26);
+	            g2.setColor(new Color(170, 255, 255, 120));
+	            g2.setStroke(new BasicStroke(2f));
+	            g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, 24, 24);
+	            g2.dispose();
+	        }
+	    }
+
+	    private static class PaintedButton extends JButton {
+	        private final Color base;
+	        public PaintedButton(JButton delegate, Color base) {
+	            super(delegate.getText());
+	            this.base = base;
+	            setFont(delegate.getFont());
+	            setForeground(delegate.getForeground());
+	            setFocusPainted(false);
+	            setBorderPainted(false);
+	            setContentAreaFilled(false);
+	            setCursor(delegate.getCursor());
+	            setPreferredSize(delegate.getPreferredSize());
+	            setBorder(delegate.getBorder());
+	        }
+	        @Override
+	        protected void paintComponent(Graphics g) {
+	            Graphics2D g2 = (Graphics2D) g.create();
+	            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+	            Color bg = base;
+	            if (getModel().isPressed()) bg = bg.darker();
+	            else if (getModel().isRollover()) bg = bg.brighter();
+
+	            g2.setColor(bg);
+	            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+
+	            g2.setColor(new Color(255, 255, 255, 70));
+	            g2.setStroke(new BasicStroke(2f));
+	            g2.drawRoundRect(1, 1, getWidth()-2, getHeight()-2, 18, 18);
+
+	            g2.dispose();
+	            super.paintComponent(g);
+	        }
+	    }
+
+
 	
 	    /* ------------------------------ MAIN ------------------------------ */
 	    public static void main(String[] args) {
