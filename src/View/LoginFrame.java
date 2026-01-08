@@ -11,7 +11,7 @@ public class LoginFrame extends JFrame {
     private JButton btnLogin, btnSignup, btnExit;
 
     private static final String A_BG =
-            fixPath("assets/forest/forest_bg_1920x1080.png");
+            fixPath("assets/mix/mix.png");
 
     public LoginFrame() {
     	
