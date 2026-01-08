@@ -10,31 +10,34 @@ public class SettingsFrame extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    // Theme colors (match your project)
-    private static final Color TEXT = new Color(225, 245, 240);
+    private static final Color TEXT   = new Color(225, 245, 240);
     private static final Color BORDER = new Color(160, 255, 255, 130);
 
     private final SettingsController controller;
-    private final Runnable onSaved; // callback to notify main view
+    private final Runnable onSaved;
 
     public SettingsFrame(SettingsController controller, Runnable onSaved) {
         super(safeT("btn.settings", "Settings"));
-        System.out.println(">>> SettingsFrame LOADED from: " + SettingsFrame.class.getProtectionDomain().getCodeSource().getLocation());
         this.controller = controller;
         this.onSaved = onSaved;
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-
-        // You can keep this size; scroll will handle content anyway.
-        setSize(820, 620);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setUndecorated(true);
         setLocationRelativeTo(null);
 
         setContentPane(buildContent());
         SysData.applyGlobalFont(this);
 
+        getRootPane().registerKeyboardAction(
+                e -> dispose(),
+                KeyStroke.getKeyStroke("ESCAPE"),
+                JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
     }
 
     private JComponent buildContent() {
+
         GameSettings gs = controller.getGameSettings();
 
         JPanel root = new JPanel(new GridBagLayout());
@@ -43,95 +46,100 @@ public class SettingsFrame extends JFrame {
         JPanel glass = frostedCard();
         glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
 
-        JLabel title = new JLabel(safeT("settings.title", "GENERAL SETTINGS"), SwingConstants.CENTER);
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        title.setFont(uiFont(Font.BOLD, 30));
+        // ---------- TITLE ----------
+        JLabel title = new JLabel("SETTINGS", SwingConstants.CENTER);
+        title.setFont(uiFont(Font.BOLD, 28));
         title.setForeground(new Color(190, 255, 220));
-        glass.add(title);
-        glass.add(Box.createVerticalStrut(20));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JCheckBox cbSound = themedCheck(safeT("settings.sound", "Sound Effects"), gs.isSoundEnabled());
-        JCheckBox cbAnim  = themedCheck(safeT("settings.animations", "Animations"), gs.isAnimationsEnabled());
-        JCheckBox cbAuto  = themedCheck(safeT("settings.autosave", "Auto-save History"), gs.isAutoSaveHistory());
+        glass.add(title);
+        glass.add(Box.createVerticalStrut(18));
+
+        // ---------- GAMEPLAY ----------
+        glass.add(sectionTitle("Gameplay"));
 
         JComboBox<String> cbDiff = new JComboBox<>(new String[]{
-                safeT("diff.easy", "Easy"),
-                safeT("diff.medium", "Medium"),
-                safeT("diff.hard", "Hard")
+                "Easy", "Medium", "Hard"
         });
         styleCombo(cbDiff);
-        cbDiff.setSelectedIndex(switch (gs.getDefaultDifficulty()) {
-            case EASY -> 0; case MEDIUM -> 1; case HARD -> 2;
-        });
+        cbDiff.setSelectedIndex(
+                gs.getDefaultDifficulty() == Difficulty.MEDIUM ? 1 :
+                gs.getDefaultDifficulty() == Difficulty.HARD ? 2 : 0
+        );
 
-        cbDiff.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(
-                    JList<?> list, Object value, int index,
-                    boolean isSelected, boolean cellHasFocus) {
+        JSlider lives = new JSlider(JSlider.HORIZONTAL, 1, 10, gs.getMaxSharedLives());
 
-                JLabel label = (JLabel) super.getListCellRendererComponent(
-                        list, value, index, isSelected, cellHasFocus);
+        lives.setMajorTickSpacing(1);
+        lives.setPaintTicks(true);
+        lives.setPaintLabels(true);
 
-                label.setOpaque(true);
+        // optional: nicer spacing
+        lives.setPreferredSize(new Dimension(300, 45));
 
-                if (index == -1) {
-                    label.setBackground(Color.WHITE);
-                    label.setForeground(new Color(20, 35, 35));
-                } else {
-                    label.setBackground(isSelected ? new Color(60, 90, 80)
-                            : new Color(30, 40, 35));
-                    label.setForeground(new Color(220, 255, 235));
-                }
-                return label;
-            }
-        });
+        styleSlider(lives);
 
-        // ✅ Language combo
-        JComboBox<String> cbLang = new JComboBox<>(new String[]{
-                safeT("lang.en", "English"),
-                safeT("lang.he", "Hebrew")
-        });
+
+        JComboBox<String> cbLang = new JComboBox<>(new String[]{"English", "Hebrew"});
         styleCombo(cbLang);
         cbLang.setSelectedIndex(gs.getLanguage() == Language.HE ? 1 : 0);
 
-        // ✅ Theme combo
-        JComboBox<String> cbTheme = new JComboBox<>(new String[]{
-                safeT("theme.dark", "Dark"),
-                safeT("theme.light", "Light")
-        });
-        styleCombo(cbTheme);
-        cbTheme.setSelectedIndex(gs.getTheme() == AppTheme.DARK ? 0 : 1);
+        JComboBox<ThemeType> cbTheme = new JComboBox<>(ThemeType.values());
+        cbTheme.setFont(uiFont(Font.PLAIN, 14));
+        cbTheme.setSelectedItem(SysData.getTheme());
 
-        // Slider
-        JSlider lives = new JSlider(1, 10, gs.getMaxSharedLives());
-        styleSlider(lives);
+        JCheckBox cbAnim = themedCheck("Animations", gs.isAnimationsEnabled());
+        JCheckBox cbAuto = themedCheck("Auto-save history", gs.isAutoSaveHistory());
 
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setOpaque(false);
-        GridBagConstraints gc = new GridBagConstraints();
-        gc.insets = new Insets(10, 10, 10, 10);
-        gc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel gameplay = centeredForm();
+        addRow(gameplay, 0, "Difficulty:", cbDiff);
+        addRow(gameplay, 1, "Shared lives:", lives);
+        addRow(gameplay, 2, "Language:", cbLang);
+        addRow(gameplay, 3, "Theme:", cbTheme);
 
-        addRow(form, gc, 0, safeT("settings.defaultDifficulty", "Default Difficulty:"), cbDiff);
-        addRow(form, gc, 1, safeT("settings.maxLives", "Max Shared Lives:"), lives);
-        addRow(form, gc, 2, safeT("lbl.language", "Language:"), cbLang);
-        addRow(form, gc, 3, safeT("lbl.theme", "Theme:"), cbTheme);
+        glass.add(gameplay);
+        glass.add(Box.createVerticalStrut(8));
+        glass.add(cbAnim);
+        glass.add(cbAuto);
 
-        gc.gridx = 0; gc.gridy = 4; gc.gridwidth = 2;
-        form.add(cbSound, gc);
-
-        gc.gridy = 5;
-        form.add(cbAnim, gc);
-
-        gc.gridy = 6;
-        form.add(cbAuto, gc);
-
-        glass.add(form);
         glass.add(Box.createVerticalStrut(18));
 
-        JButton save = frostedButton(safeT("btn.save", "Save"));
-        JButton cancel = frostedButton(safeT("btn.cancel", "Cancel"));
+        // ---------- AUDIO ----------
+        glass.add(sectionTitle("Audio"));
+
+        JSlider volume = new JSlider(JSlider.HORIZONTAL, 0, 100,
+                (int) (SysData.getMusicVolume() * 100));
+
+        volume.setMajorTickSpacing(25);
+        volume.setMinorTickSpacing(5);
+        volume.setPaintTicks(true);
+        volume.setPaintLabels(true);
+
+        // 🔥 CRITICAL: give it enough height
+        volume.setPreferredSize(new Dimension(300, 55));
+
+        styleSlider(volume);
+
+        volume.addChangeListener(e -> {
+            SysData.setMusicVolume(volume.getValue() / 100f);
+            MusicManager.applyVolume();
+        });
+
+        JCheckBox cbSound = themedCheck("Sound effects", gs.isSoundEnabled());
+        JCheckBox cbMusic = themedCheck("Background music", SysData.isMusicEnabled());
+
+        JPanel audio = centeredForm();
+        addRow(audio, 0, "Music volume:", volume);
+
+        glass.add(audio);
+        glass.add(Box.createVerticalStrut(8));
+        glass.add(cbSound);
+        glass.add(cbMusic);
+
+        glass.add(Box.createVerticalStrut(20));
+
+        // ---------- ACTIONS ----------
+        JButton save = frostedButton("Save");
+        JButton cancel = frostedButton("Cancel");
 
         save.addActionListener(e -> {
             controller.setSoundEnabled(cbSound.isSelected());
@@ -139,45 +147,23 @@ public class SettingsFrame extends JFrame {
             controller.setAutoSaveHistory(cbAuto.isSelected());
             controller.setMaxSharedLives(lives.getValue());
 
-            Difficulty d = switch (cbDiff.getSelectedIndex()) {
-                case 1 -> Difficulty.MEDIUM;
-                case 2 -> Difficulty.HARD;
-                default -> Difficulty.EASY;
-            };
-            controller.setDefaultDifficulty(d);
+            controller.setDefaultDifficulty(
+                    cbDiff.getSelectedIndex() == 1 ? Difficulty.MEDIUM :
+                    cbDiff.getSelectedIndex() == 2 ? Difficulty.HARD :
+                    Difficulty.EASY
+            );
 
-            // ✅ Save language
-            Language lang = (cbLang.getSelectedIndex() == 1) ? Language.HE : Language.EN;
+            Language lang = cbLang.getSelectedIndex() == 1 ? Language.HE : Language.EN;
             controller.setLanguage(lang);
             SysData.setLanguage(lang);
 
-            // ✅ עדכון כיוון
-            if (lang == Language.HE) {
-                JFrame.setDefaultLookAndFeelDecorated(true);
-                applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-            } else {
-                applyComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-            }
+            SysData.setTheme((ThemeType) cbTheme.getSelectedItem());
+            SysData.setMusicEnabled(cbMusic.isSelected());
 
-           
+            MusicManager.play("assets/ice/music.wav");
 
-
-
-            // ✅ Save theme + apply immediately
-            AppTheme theme = (cbTheme.getSelectedIndex() == 0) ? AppTheme.DARK : AppTheme.LIGHT;
-            controller.setTheme(theme);
-            SysData.setTheme(theme);
-            ThemeManager.apply(theme);
-            ThemeManager.refreshAllWindows();
 
             if (onSaved != null) onSaved.run();
-            dispose();
-
-            JOptionPane.showMessageDialog(this,
-                    safeT("msg.saved", "Settings saved."),
-                    safeT("btn.settings", "Settings"),
-                    JOptionPane.INFORMATION_MESSAGE);
-
             dispose();
         });
 
@@ -188,135 +174,100 @@ public class SettingsFrame extends JFrame {
         actions.add(save);
         actions.add(cancel);
 
-        // ✅ ensure it keeps height and isn't collapsed
-        actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
-
         glass.add(actions);
-        glass.add(Box.createVerticalStrut(10));
 
-        // ✅ Wrap glass in scroll pane (fixes "buttons missing" forever)
-        JScrollPane sp = new JScrollPane(glass);
-        sp.setBorder(null);
-        sp.setOpaque(false);
-        sp.getViewport().setOpaque(false);
-        sp.getVerticalScrollBar().setUnitIncrement(16);
-
-        root.add(sp);
-
-        // ✅ RTL for Hebrew (applies to entire UI tree)
-        if (SysData.getI18n() != null && SysData.getI18n().isHebrew()) {
-            applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-            SwingUtilities.updateComponentTreeUI(this);
-        }
-
+        root.add(glass);
         return wrapBackground(root);
     }
 
-    // ---------- UI helpers ----------
+    // ================= HELPERS =================
+
+    private JPanel centeredForm() {
+        JPanel p = new JPanel(new GridBagLayout());
+        p.setOpaque(false);
+        p.setMaximumSize(new Dimension(520, Integer.MAX_VALUE));
+        return p;
+    }
+
+    private void addRow(JPanel p, int y, String label, JComponent comp) {
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.insets = new Insets(6, 8, 6, 8);
+
+        gc.gridx = 0;
+        gc.gridy = y;
+        gc.anchor = GridBagConstraints.LINE_END;
+
+        JLabel l = new JLabel(label);
+        l.setFont(uiFont(Font.BOLD, 14));
+        l.setForeground(TEXT);
+        p.add(l, gc);
+
+        gc.gridx = 1;
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        if (comp instanceof JSlider) {
+            comp.setPreferredSize(new Dimension(300, 55));
+        } else {
+            comp.setPreferredSize(new Dimension(260, 28));
+        }
+
+        p.add(comp, gc);
+    }
 
     private JPanel frostedCard() {
-        JPanel glass = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                g2.setColor(new Color(20, 35, 35, 180));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 35, 35);
-
+        JPanel p = new JPanel() {
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setColor(new Color(20, 35, 35, 190));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
                 g2.setColor(BORDER);
-                g2.setStroke(new BasicStroke(3f));
-                g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, 30, 30);
-
-                g2.dispose();
+                g2.setStroke(new BasicStroke(3));
+                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 36, 36);
             }
         };
-        glass.setOpaque(false);
-        glass.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
-
-        // ❌ DO NOT set a fixed preferredSize here (it hides bottom components!)
-        // glass.setPreferredSize(new Dimension(620, 440));
-
-        return glass;
+        p.setOpaque(false);
+        p.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+        p.setMaximumSize(new Dimension(700, 620));
+        return p;
     }
 
-    private JCheckBox themedCheck(String text, boolean selected) {
-        JCheckBox cb = new JCheckBox(text, selected);
-        cb.setOpaque(false);
-        cb.setFont(uiFont(Font.BOLD, 16));
-        cb.setForeground(TEXT);
-        cb.setFocusPainted(false);
-        return cb;
+    private JLabel sectionTitle(String t) {
+        JLabel l = new JLabel(t);
+        l.setFont(uiFont(Font.BOLD, 16));
+        l.setForeground(new Color(160, 230, 210));
+        l.setAlignmentX(Component.CENTER_ALIGNMENT);
+        l.setBorder(BorderFactory.createEmptyBorder(10, 0, 6, 0));
+        return l;
     }
 
-    private void styleCombo(JComboBox<String> cb) {
-    	cb.setFont(uiFont(Font.PLAIN, 15));
+    private JCheckBox themedCheck(String text, boolean sel) {
+        JCheckBox c = new JCheckBox(text, sel);
+        c.setOpaque(false);
+        c.setFont(uiFont(Font.PLAIN, 14));
+        c.setForeground(TEXT);
+        c.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return c;
+    }
+
+    private JButton frostedButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(uiFont(Font.BOLD, 16));
+        b.setForeground(new Color(200, 255, 230));
+        b.setContentAreaFilled(false);
+        b.setBorderPainted(false);
+        b.setFocusPainted(false);
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setPreferredSize(new Dimension(140, 42));
+        return b;
+    }
+
+    private void styleCombo(JComboBox<?> cb) {
+        cb.setFont(uiFont(Font.PLAIN, 14));
         cb.setBackground(Color.WHITE);
-        cb.setForeground(new Color(20, 35, 35));
-        cb.setBorder(BorderFactory.createLineBorder(new Color(90, 65, 35), 2, true));
     }
 
     private void styleSlider(JSlider s) {
         s.setOpaque(false);
         s.setForeground(TEXT);
-        s.setPaintTicks(true);
-        s.setPaintLabels(true);
-        s.setMajorTickSpacing(1);
-    }
-
-    private void addRow(JPanel p, GridBagConstraints gc, int y, String label, JComponent comp) {
-        gc.gridx = 0; gc.gridy = y; gc.gridwidth = 1; gc.weightx = 0; gc.anchor = GridBagConstraints.LINE_END;
-        JLabel l = new JLabel(label);
-        l.setFont(uiFont(Font.BOLD, 16));
-        l.setForeground(TEXT);
-        p.add(l, gc);
-
-        gc.gridx = 1; gc.weightx = 1; gc.anchor = GridBagConstraints.LINE_START;
-        p.add(comp, gc);
-    }
-    private Font uiFont(int style, int size) {
-        Font f = new Font("Georgia", style, size);
-
-        // אם זו עברית והפונט לא יודע להציג עברית -> נחליף לפונט שתומך
-        boolean isHebrew = SysData.getI18n() != null && SysData.getI18n().isHebrew();
-        if (isHebrew && f.canDisplayUpTo("אבגדהוזחטיכלמנסעפצקרשת") != -1) {
-            f = new Font("Arial", style, size); // או "Tahoma" / "Segoe UI" / "David"
-        }
-        return f;
-    }
-    private JButton frostedButton(String text) {
-        JButton b = new JButton(text);
-        b.setFont(uiFont(Font.BOLD, 18));
-        b.setForeground(new Color(200, 255, 230));
-        b.setFocusPainted(false);
-        b.setContentAreaFilled(false);
-        b.setBorderPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setOpaque(false);
-
-        b.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
-            @Override public void paint(Graphics g, JComponent c) {
-                AbstractButton ab = (AbstractButton) c;
-                ButtonModel m = ab.getModel();
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                Color base = new Color(45, 30, 20, 200);
-                Color hover = new Color(60, 45, 30, 220);
-                g2.setColor(m.isRollover() ? hover : base);
-                g2.fillRoundRect(0, 0, c.getWidth(), c.getHeight(), 18, 18);
-
-                g2.setColor(new Color(160, 255, 255, m.isRollover() ? 180 : 120));
-                g2.setStroke(new BasicStroke(2f));
-                g2.drawRoundRect(2, 2, c.getWidth()-4, c.getHeight()-4, 16, 16);
-
-                g2.dispose();
-                super.paint(g, c);
-            }
-        });
-
-        b.setPreferredSize(new Dimension(160, 46));
-        return b;
     }
 
     private JComponent wrapBackground(JComponent center) {
@@ -326,11 +277,13 @@ public class SettingsFrame extends JFrame {
         return bg;
     }
 
-    // safe translation helper (so missing keys won't crash your UI)
+    private Font uiFont(int style, int size) {
+        return new Font("Georgia", style, size);
+    }
+
     private static String safeT(String key, String fallback) {
         try {
-            if (Model.SysData.getI18n() == null) return fallback;
-            return Model.SysData.getI18n().t(key);
+            return SysData.getI18n().t(key);
         } catch (Exception e) {
             return fallback;
         }

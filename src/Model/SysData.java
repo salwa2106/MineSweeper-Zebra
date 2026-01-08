@@ -15,11 +15,21 @@ public class SysData {
 
     // -------------------- I18N (LANGUAGE) --------------------
     private static final l18n i18n = new l18n(Language.EN);
-    
+    private static float musicVolume = 0.7f; // 70% default (0.0–1.0)
+
+    public static float getMusicVolume() {
+        return musicVolume;
+    }
+
+    public static void setMusicVolume(float v) {
+        musicVolume = Math.max(0f, Math.min(1f, v));
+    }
+
 
     public static l18n getI18n() {
         return i18n;
     }
+
     public static void applyGlobalFont(Component root) {
         if (root == null) return;
 
@@ -27,7 +37,7 @@ public class SysData {
 
         Font base = new Font("SansSerif", Font.PLAIN, 14);
         if (isHebrew && base.canDisplayUpTo("אבגדהוזחטיכלמנסעפצקרשת") != -1) {
-            base = new Font("SansSerif", Font.PLAIN, 14); // fallback font that supports Hebrew
+            base = new Font("SansSerif", Font.PLAIN, 14);
         }
 
         applyFontRecursively(root, base);
@@ -44,25 +54,37 @@ public class SysData {
         }
     }
 
-
     public static void setLanguage(Language lang) {
         if (lang == null) lang = Language.EN;
         i18n.setLanguage(lang);
     }
 
-    // (Optional) if you want SysData to also remember theme globally:
-    private static AppTheme currentTheme = AppTheme.DARK;
+    // -------------------- THEME & MUSIC --------------------
 
-    public static AppTheme getTheme() {
+    private static ThemeType currentTheme = ThemeType.FOREST;
+    private static boolean musicEnabled = true;
+
+    public static ThemeType getTheme() {
         return currentTheme;
     }
 
-    public static void setTheme(AppTheme theme) {
-        if (theme == null) theme = AppTheme.DARK;
+    public static void setTheme(ThemeType theme) {
+        if (theme == null) {
+            theme = ThemeType.FOREST;
+        }
         currentTheme = theme;
     }
 
+    public static boolean isMusicEnabled() {
+        return musicEnabled;
+    }
+
+    public static void setMusicEnabled(boolean enabled) {
+        musicEnabled = enabled;
+    }
+
     // -------------------- LOGIN SESSION --------------------
+
     private static String currentUsername = null;
     private static String currentRole = null;
 
@@ -78,22 +100,20 @@ public class SysData {
         currentRole = null;
     }
 
+    // -------------------- USERS CSV --------------------
+
     private static String getUsersCSVPath() {
         try {
             String path = SysData.class.getProtectionDomain()
                     .getCodeSource().getLocation().getPath();
             String decoded = java.net.URLDecoder.decode(path, "UTF-8");
 
-            // remove /bin if running in Eclipse
             if (decoded.contains("/bin")) {
                 decoded = decoded.substring(0, decoded.indexOf("/bin"));
-                System.out.println("Users CSV path (Dev): " + decoded + "/src/resources/users/users.csv");
                 return decoded + "/src/resources/users/users.csv";
             }
 
-            // running from JAR
             decoded = decoded.substring(0, decoded.lastIndexOf("/"));
-            System.out.println("Users CSV path (JAR): " + decoded + "/resources/users/users.csv");
             return decoded + "/resources/users/users.csv";
 
         } catch (Exception e) {
@@ -101,7 +121,6 @@ public class SysData {
             return null;
         }
     }
-
     public static boolean addUser(String username, String password, String role) {
 
         if (username == null || password == null || role == null) return false;
@@ -226,6 +245,7 @@ public class SysData {
 
         return false;
     }
+    // -------------------- QUESTIONS CSV --------------------
 
     private static String getCSVPath() {
         try {
@@ -233,16 +253,12 @@ public class SysData {
                     .getCodeSource().getLocation().getPath();
             String decoded = java.net.URLDecoder.decode(path, "UTF-8");
 
-            // remove /bin if running in Eclipse
             if (decoded.contains("/bin")) {
                 decoded = decoded.substring(0, decoded.indexOf("/bin"));
-                System.out.println("CSV path (Dev): " + decoded + "/src/resources/questions/questionsCell.csv");
                 return decoded + "/src/resources/questions/questionsCell.csv";
             }
 
-            // running from JAR
             decoded = decoded.substring(0, decoded.lastIndexOf("/"));
-            System.out.println("CSV path (JAR): " + decoded + "/resources/questions/questionsCell.csv");
             return decoded + "/resources/questions/questionsCell.csv";
 
         } catch (Exception e) {
@@ -251,7 +267,7 @@ public class SysData {
         }
     }
 
-    // Use comma for CSV (Excel exported with commas)
+ // Use comma for CSV (Excel exported with commas)
     private static final String SEP = ",";
 
     private static final List<Question> questions = new ArrayList<>();
