@@ -164,6 +164,10 @@ public class MineSweeperPrototype extends JFrame {
 
     private final Controller.SettingsController settingsController = new Controller.SettingsController();
     private final QuestionsController questionsController = new QuestionsController();
+    
+ // add near other fields
+    private boolean gameEnded = false;
+
 
 
 
@@ -1687,7 +1691,9 @@ public class MineSweeperPrototype extends JFrame {
                     );
 
                     loseSharedLives(1);
+                    if (sharedLives == 0) return;
                     usedTurn = true;
+
 
                     shakeWindow();
                 }
@@ -1916,28 +1922,14 @@ public class MineSweeperPrototype extends JFrame {
         // ------------------------------------
         if (boards[ownerIdx].isAllSafeCellsRevealed()) {
             String winner = (ownerIdx == 0 ? tfP1.getText().trim() : tfP2.getText().trim());
-            gameHistory.add(new String[]{
-                    winner,
-                    safeT("dlg.clearedBoard","Cleared Board"),
-                    String.valueOf(sharedPoints),
-                    currentDifficulty.name(),
-                    String.valueOf(java.time.LocalDateTime.now())
-            });
-            if (settingsController.isAutoSaveHistory()) {
-                exportHistoryToCSV();
-            }
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "🎉 Congratulations! You cleared the board!",
-                    safeT("dlg.boardCleared","Board Cleared"),
-                    JOptionPane.INFORMATION_MESSAGE
-            );
+            endGame(safeT("dlg.boardCleared", "Cleared Board"), winner);
 
             if (fireworks != null) {
                 fireworks.startFireworks();
             }
+            return;
         }
+
     }
 
 
@@ -2297,41 +2289,11 @@ public class MineSweeperPrototype extends JFrame {
         updateSharedHearts();
 
         if (sharedLives == 0) {
-            // 1) Add this finished game to history (LOSE case)
-            String p1 = tfP1.getText().trim();
-            String p2 = tfP2.getText().trim();
-            gameHistory.add(new String[]{
-                    p1 + " & " + p2,
-                    "Game Over (0 lives)",
-                    String.valueOf(sharedPoints),
-                    currentDifficulty.name(),
-                    String.valueOf(java.time.LocalDateTime.now())
-            });
-
-            // ✅ 2) AUTO-SAVE if enabled in Settings
-            if (settingsController.isAutoSaveHistory()) {
-                exportHistoryToCSV();
-            }
-
-            // 3) Ask if they want a new game
-            String message = safeT("msg.gameOverPrefix", "Game Over – Final Score: ") + sharedPoints
-                    + "\n\nDo you want to start a new game?";
-
-            int choice = JOptionPane.showConfirmDialog(
-                    this,
-                    message,
-                    "Game Over",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            if (choice == JOptionPane.YES_OPTION) {
-                startGame();
-            } else {
-                // optional: gameInProgress = false;
-            }
+            endGame("Game Over (0 lives)", null);
+            return;
         }
     }
+
 
 
 
@@ -2803,6 +2765,109 @@ public class MineSweeperPrototype extends JFrame {
             super.paintComponent(g);
         }
     }
+    
+ // ✅ checks if a player "discovered all mines" on their own board
+ // (treat flagged mine as discovered because it's marked by the player)
+ private boolean isAllMinesDiscovered(int ownerIdx) {
+     Board b = boards[ownerIdx];
+     for (int r = 0; r < b.getRows(); r++) {
+         for (int c = 0; c < b.getCols(); c++) {
+             Cell cell = b.getCell(r, c);
+             if (cell.getType() == CellType.MINE) {
+                 if (!(cell.isRevealed() || cell.isFlagged())) {
+                     return false;
+                 }
+             }
+         }
+     }
+     return true;
+ }
+
+ // ✅ reveal everything on both boards (ignores flags / turn rules)
+ private void revealAllBoards() {
+     for (int p = 0; p < 2; p++) {
+         Board b = boards[p];
+         for (int r = 0; r < b.getRows(); r++) {
+             for (int c = 0; c < b.getCols(); c++) {
+                 Cell cell = b.getCell(r, c);
+                 if (!cell.isRevealed()) {
+                     cell.reveal();
+                 }
+                 updateButtonForCell(p, cell);
+             }
+         }
+     }
+
+     // optional: disable all buttons so no more interaction after game ends
+     for (int p = 0; p < 2; p++) {
+         for (int r = 0; r < buttons[p].length; r++) {
+             for (int c = 0; c < buttons[p][r].length; c++) {
+                 if (buttons[p][r][c] != null) buttons[p][r][c].setEnabled(false);
+             }
+         }
+     }
+ }
+
+ // ✅ convert remaining lives to points: each heart = activation cost (by difficulty)
+ private void convertRemainingLivesToPoints() {
+     if (sharedLives <= 0) return;
+
+     int valuePerHeart = getQuestionActivationCost(); // EASY=5, MEDIUM=8, HARD=12
+     int bonus = sharedLives * valuePerHeart;
+
+     bumpScore(bonus);
+     sharedLives = 0;
+     updateSharedHearts();
+ }
+
+ // ✅ one place to finish a game properly
+ private void endGame(String resultText, String winnerNameOrNull) {
+	    if (gameEnded) return;
+	    gameEnded = true;
+	    gameInProgress = false;
+
+	    // 1) convert remaining lives to points
+	    convertRemainingLivesToPoints();
+
+	    // 2) reveal all tiles (both boards)
+	    revealAllBoards();
+
+	    // 3) write history (final score AFTER conversion)
+	    String who = (winnerNameOrNull != null)
+	            ? winnerNameOrNull
+	            : (tfP1.getText().trim() + " & " + tfP2.getText().trim());
+
+	    gameHistory.add(new String[] {
+	            who,
+	            resultText,
+	            String.valueOf(sharedPoints),
+	            currentDifficulty.name(),
+	            String.valueOf(java.time.LocalDateTime.now())
+	    });
+
+	    if (settingsController.isAutoSaveHistory()) {
+	        exportHistoryToCSV();
+	    }
+
+	    String message = resultText + "\n" +
+	            safeT("msg.finalScorePrefix", "Final Score: ") + sharedPoints + "\n\n" +
+	            safeT("msg.startNewGameQ", "Do you want to start a new game?");
+
+	    int choice = JOptionPane.showConfirmDialog(
+	            this,
+	            message,
+	            safeT("dlg.gameEnded", "Game Ended"),
+	            JOptionPane.YES_NO_OPTION,
+	            JOptionPane.INFORMATION_MESSAGE
+	    );
+
+	    if (choice == JOptionPane.YES_OPTION) {
+	        gameEnded = false;
+	        startGame();
+	    }
+	}
+
+
 
 
 
