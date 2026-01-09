@@ -277,11 +277,23 @@ public class MineSweeperPrototype extends JFrame {
         try {
             if (SysData.getI18n() != null) {
                 String v = SysData.getI18n().t(key);
-                if (v != null && !v.isBlank()) return v;
+                if (v == null) return fallback;
+
+                v = v.trim();
+                if (v.isBlank()) return fallback;
+
+                // ✅ if missing translations are returned like "!some.key!"
+                if (v.startsWith("!") && v.endsWith("!")) return fallback;
+
+                // ✅ sometimes libs return the key itself
+                if (v.equalsIgnoreCase(key)) return fallback;
+
+                return v;
             }
         } catch (Exception ignored) {}
         return fallback;
     }
+
 
     private void refreshLocalization() {
         try {
@@ -2809,16 +2821,19 @@ public class MineSweeperPrototype extends JFrame {
  }
 
  // ✅ convert remaining lives to points: each heart = activation cost (by difficulty)
- private void convertRemainingLivesToPoints() {
-     if (sharedLives <= 0) return;
+ private int convertRemainingLivesToPoints() {
+	    if (sharedLives <= 0) return 0;
 
-     int valuePerHeart = getQuestionActivationCost(); // EASY=5, MEDIUM=8, HARD=12
-     int bonus = sharedLives * valuePerHeart;
+	    int valuePerHeart = getQuestionActivationCost(); // EASY=5, MEDIUM=8, HARD=12
+	    int bonus = sharedLives * valuePerHeart;
 
-     bumpScore(bonus);
-     sharedLives = 0;
-     updateSharedHearts();
- }
+	    bumpScore(bonus);
+	    sharedLives = 0;
+	    updateSharedHearts();
+
+	    return bonus;   // ✅ מחזירים כמה נקודות נוספו
+	}
+
 
  // ✅ one place to finish a game properly
  private void endGame(String resultText, String winnerNameOrNull) {
@@ -2826,16 +2841,16 @@ public class MineSweeperPrototype extends JFrame {
 	    gameEnded = true;
 	    gameInProgress = false;
 
-	    // 1) convert remaining lives to points
-	    convertRemainingLivesToPoints();
+	    // 1) convert lives -> points (keep bonus for message)
+	    int bonusFromHearts = convertRemainingLivesToPoints();
 
-	    // 2) reveal all tiles (both boards)
+	    // 2) reveal boards
 	    revealAllBoards();
 
-	    // 3) write history (final score AFTER conversion)
-	    String who = (winnerNameOrNull != null)
-	            ? winnerNameOrNull
-	            : (tfP1.getText().trim() + " & " + tfP2.getText().trim());
+	    // 3) history
+	    String p1 = tfP1.getText().trim();
+	    String p2 = tfP2.getText().trim();
+	    String who = (winnerNameOrNull != null) ? winnerNameOrNull : (p1 + " & " + p2);
 
 	    gameHistory.add(new String[] {
 	            who,
@@ -2845,18 +2860,36 @@ public class MineSweeperPrototype extends JFrame {
 	            String.valueOf(java.time.LocalDateTime.now())
 	    });
 
-	    if (settingsController.isAutoSaveHistory()) {
-	        exportHistoryToCSV();
-	    }
+	    if (settingsController.isAutoSaveHistory()) exportHistoryToCSV();
 
-	    String message = resultText + "\n" +
-	            safeT("msg.finalScorePrefix", "Final Score: ") + sharedPoints + "\n\n" +
-	            safeT("msg.startNewGameQ", "Do you want to start a new game?");
+	    // 4) message (clear & consistent)
+	    boolean isWin = (winnerNameOrNull != null);
+
+	    String title = safeT("dlg.gameEnded", "Game Ended");
+	    String header = isWin
+	            ? safeT("dlg.winTitle", "🎉 Winner!") + " " + winnerNameOrNull
+	            : safeT("dlg.loseTitle", "💀 Game Over");
+
+	    String reasonLine = safeT("dlg.reasonPrefix", "Result: ") + resultText;
+	    String scoreLine  = safeT("msg.finalScorePrefix", "Final Score: ") + sharedPoints;
+
+	    String bonusLine = (bonusFromHearts > 0)
+	            ? safeT("msg.bonusFromHeartsPrefix", "Bonus from remaining hearts: +") + bonusFromHearts
+	            : safeT("msg.bonusFromHeartsNone", "Bonus from remaining hearts: +0");
+
+	    String askLine = safeT("msg.startNewGameQ", "Start a new game?");
+
+	    String message =
+	            header + "\n\n" +
+	            reasonLine + "\n" +
+	            bonusLine + "\n" +
+	            scoreLine + "\n\n" +
+	            askLine;
 
 	    int choice = JOptionPane.showConfirmDialog(
 	            this,
 	            message,
-	            safeT("dlg.gameEnded", "Game Ended"),
+	            title,
 	            JOptionPane.YES_NO_OPTION,
 	            JOptionPane.INFORMATION_MESSAGE
 	    );
