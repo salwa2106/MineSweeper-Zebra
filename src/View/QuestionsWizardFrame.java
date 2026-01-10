@@ -149,7 +149,6 @@ public class QuestionsWizardFrame extends JFrame {
         // ===== LOAD DATA =====
         reloadFromModel();
 
-<<<<<<< Updated upstream
         // ===== ACTIONS =====
         importBtn.addActionListener(e -> onImportCsv());
         exportBtn.addActionListener(e -> onExportCsv());
@@ -157,7 +156,6 @@ public class QuestionsWizardFrame extends JFrame {
         editBtn.addActionListener(e -> onEdit());
         deleteBtn.addActionListener(e -> onDelete());
 
-=======
         // Actions
         importBtn.addActionListener(e -> {
         	SoundManager.play(SoundManager.Sfx.CLICK);
@@ -174,7 +172,6 @@ public class QuestionsWizardFrame extends JFrame {
         deleteBtn.addActionListener(e -> {
         	SoundManager.play(SoundManager.Sfx.CLICK);
         	onDelete();});
->>>>>>> Stashed changes
         backBtn.addActionListener(e -> {
         	SoundManager.play(SoundManager.Sfx.CLICK);
             dispose();
