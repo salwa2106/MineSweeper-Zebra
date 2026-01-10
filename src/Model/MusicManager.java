@@ -10,6 +10,14 @@ public class MusicManager {
 
     private static Clip clip;
     public static void play(String resourcePath) {
+
+        // 🔒 HARD GUARD: do nothing if music is disabled
+        if (!SysData.isMusicEnabled()) {
+            stop();
+            return;
+        }
+
+        // stop any currently playing music first
         stop();
 
         try {
@@ -27,12 +35,16 @@ public class MusicManager {
 
             clip = AudioSystem.getClip();
             clip.open(ais);
+
+            applyVolume();                // ✅ apply saved volume
             clip.loop(Clip.LOOP_CONTINUOUSLY);
+            clip.start();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
 
     public static void stop() {

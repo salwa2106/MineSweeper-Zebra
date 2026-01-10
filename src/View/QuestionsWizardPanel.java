@@ -1,6 +1,7 @@
 package View;
 
 import Model.Question;
+import Model.SoundManager;
 import Model.SysData;
 
 import javax.swing.*;
@@ -57,14 +58,18 @@ public class QuestionsWizardPanel extends JPanel {
 
         // default new row: easy question with standard points/life
         addBtn.addActionListener(e ->
-                model.addRow(new Object[]{"", "", "", "", "", "A", 3, -1, 1, "easy"}));
+                {
+                	SoundManager.play(SoundManager.Sfx.CLICK);
+                	model.addRow(new Object[]{"", "", "", "", "", "A", 3, -1, 1, "easy"});});
 
         deleteBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
             int row = table.getSelectedRow();
             if (row >= 0) model.removeRow(row);
         });
 
         saveBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
             saveToSysData();
             if (onSave != null) onSave.run();
         });

@@ -3,6 +3,7 @@ package View;
 import Model.SysData;
 import javax.swing.*;
 import java.awt.*;
+import Model.SoundManager;
 
 public class LoginFrame extends JFrame {
 
@@ -16,7 +17,7 @@ public class LoginFrame extends JFrame {
     public LoginFrame() {
     	
     	SysData.init();  // loads questions CSV once (safe even if called again)
-        setTitle("MineSweeper + Trivia — Forest Edition");
+        setTitle("MineSweeper + Trivia");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
@@ -101,12 +102,22 @@ public class LoginFrame extends JFrame {
         bottom.setOpaque(false);
         bottom.add(btnExit);
 
-        btnLogin.addActionListener(e -> doLogin());
+        btnLogin.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            doLogin();
+        });
+
         btnSignup.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
             dispose();
             new SignUpFrame();
         });
-        btnExit.addActionListener(e -> System.exit(0));
+
+        btnExit.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            System.exit(0);
+        });
+
 
         JPanel wrapper = new JPanel();
         wrapper.setOpaque(false);

@@ -64,6 +64,7 @@ public class SysData {
     private static ThemeType currentTheme = ThemeType.FOREST;
     private static boolean musicEnabled = true;
 
+    
     public static ThemeType getTheme() {
         return currentTheme;
     }
@@ -81,6 +82,17 @@ public class SysData {
 
     public static void setMusicEnabled(boolean enabled) {
         musicEnabled = enabled;
+    }
+
+ // -------------------- SFX (SOUND EFFECTS) --------------------
+    private static boolean soundEffectsEnabled = true;
+
+    public static boolean isSoundEffectsEnabled() {
+        return soundEffectsEnabled;
+    }
+
+    public static void setSoundEffectsEnabled(boolean enabled) {
+        soundEffectsEnabled = enabled;
     }
 
     // -------------------- LOGIN SESSION --------------------
