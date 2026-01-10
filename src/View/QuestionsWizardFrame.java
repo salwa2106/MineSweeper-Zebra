@@ -1,6 +1,7 @@
 package View;
 
 import Model.Question;
+import Model.SoundManager;
 import Model.SysData;
 
 import javax.swing.*;
@@ -148,6 +149,7 @@ public class QuestionsWizardFrame extends JFrame {
         // ===== LOAD DATA =====
         reloadFromModel();
 
+<<<<<<< Updated upstream
         // ===== ACTIONS =====
         importBtn.addActionListener(e -> onImportCsv());
         exportBtn.addActionListener(e -> onExportCsv());
@@ -155,7 +157,26 @@ public class QuestionsWizardFrame extends JFrame {
         editBtn.addActionListener(e -> onEdit());
         deleteBtn.addActionListener(e -> onDelete());
 
+=======
+        // Actions
+        importBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	onImportCsv();});
+        exportBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	onExportCsv();});
+        addBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	onAdd();});
+        editBtn.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            onEdit();});
+        deleteBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	onDelete();});
+>>>>>>> Stashed changes
         backBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
             dispose();
             if (onBack != null) onBack.run();
         });
@@ -461,6 +482,7 @@ public class QuestionsWizardFrame extends JFrame {
             actions.add(cancel);
 
             ok.addActionListener(e -> {
+            	SoundManager.play(SoundManager.Sfx.CLICK);
                 if (tfQuestion.getText().trim().isEmpty()) {
                     JOptionPane.showMessageDialog(this, "Question text is required.");
                     return;
@@ -481,7 +503,9 @@ public class QuestionsWizardFrame extends JFrame {
                 dispose();
             });
 
-            cancel.addActionListener(e -> dispose());
+            cancel.addActionListener(e -> {
+            	SoundManager.play(SoundManager.Sfx.CLICK);
+            	dispose();});
 
             getContentPane().setLayout(new BorderLayout());
             getContentPane().add(p, BorderLayout.CENTER);
