@@ -8,9 +8,11 @@ import Model.CellType;
 import Model.Difficulty;
 import Model.MusicManager;
 import Model.Question;
+import Model.SoundManager;
 import Model.SysData;
 import Model.ThemeAssets;
 import Model.ThemeType;
+import Controller.SettingsController;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -184,7 +186,7 @@ public class MineSweeperPrototype extends JFrame {
     /* ------------------------------ CONSTRUCTOR ------------------------------ */
     public MineSweeperPrototype() {
 
-        super("MineSweeper + Trivia — Forest Edition");
+        super("MineSweeper + Trivia");
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -222,10 +224,9 @@ public class MineSweeperPrototype extends JFrame {
         backgroundPanel.setLayout(new BorderLayout());
         backgroundPanel.add(root, BorderLayout.CENTER);
         setContentPane(backgroundPanel);
-
-        
-
-
+        if (SysData.isMusicEnabled()) {
+            MusicManager.play(SysData.getTheme().assets.music);
+        }
         SysData.applyGlobalFont(this);
     }
 
@@ -236,6 +237,7 @@ public class MineSweeperPrototype extends JFrame {
         );
         return new ImageIcon(img);
     }
+
 
 
     
@@ -250,8 +252,11 @@ public class MineSweeperPrototype extends JFrame {
         backgroundPanel.add(root, BorderLayout.CENTER);
         setContentPane(backgroundPanel);
 
-        MusicManager.play(SysData.getTheme().assets.music);
-
+        if (SysData.isMusicEnabled()) {
+            MusicManager.play(SysData.getTheme().assets.music);
+        } else {
+            MusicManager.stop();   
+        }
 
         // Rebuild game UI
         if (gamePanel != null) {
@@ -325,7 +330,10 @@ public class MineSweeperPrototype extends JFrame {
         card.add(woodHeader(safeT("settings.title",safeT("menu.settings", "Settings"))), BorderLayout.NORTH);
 
         JButton back = woodButton(safeT("btn.back",safeT("btn.back", "Back")));
-        back.addActionListener(e -> showMenu());
+        back.addActionListener(e ->{
+        SoundManager.play(SoundManager.Sfx.CLICK);
+        showMenu();
+        });
 
         JPanel center = new JPanel();
         center.setOpaque(false);
@@ -361,7 +369,9 @@ public class MineSweeperPrototype extends JFrame {
         card.add(woodHeader(safeT("questions.settings.title","Question Settings")), BorderLayout.NORTH);
 
         JButton back = woodButton(safeT("btn.back",safeT("btn.back", "Back")));
-        back.addActionListener(e -> showMenu());
+        back.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	showMenu();});
 
         JPanel center = new JPanel();
         center.setOpaque(false);
@@ -573,7 +583,7 @@ public class MineSweeperPrototype extends JFrame {
         title.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 48));
         title.setForeground(new Color(190, 255, 220));
 
-        JLabel subtitle = new JLabel(safeT("app.subtitle",safeT("app.subtitle", "+ Trivia — Forest Edition")), SwingConstants.CENTER);
+        JLabel subtitle = new JLabel(safeT("app.subtitle",safeT("app.subtitle", "+ Trivia")), SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         subtitle.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.PLAIN, 22));
         subtitle.setForeground(new Color(170, 220, 200));
@@ -593,7 +603,9 @@ public class MineSweeperPrototype extends JFrame {
         JButton questionsBtn = null;
         if (SysData.isAdmin()) {
             questionsBtn = createFrostedButton("Questions");
-            questionsBtn.addActionListener(e -> openQuestionsWizard());
+            questionsBtn.addActionListener(e -> {
+            	SoundManager.play(SoundManager.Sfx.CLICK);
+            	openQuestionsWizard();});
         }
 
 
@@ -609,12 +621,17 @@ public class MineSweeperPrototype extends JFrame {
         }
 
         // ✅ Actions
-        newGame.addActionListener(e -> { currentScreen = SCREEN_NEW_GAME; cards.show(root, SCREEN_NEW_GAME); });
+        newGame.addActionListener(e -> { 
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	currentScreen = SCREEN_NEW_GAME; cards.show(root, SCREEN_NEW_GAME); });
         updateResumeButtonState();
-        resumeButton.addActionListener(e -> { currentScreen = SCREEN_GAME; cards.show(root, SCREEN_GAME); });
+        resumeButton.addActionListener(e -> { 
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	currentScreen = SCREEN_GAME; cards.show(root, SCREEN_GAME); });
 
         // ✅ Settings opens popup window
         settings.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
         	SettingsFrame frame = new SettingsFrame(settingsController, () -> {
 
         	    cbDifficulty.setSelectedIndex(switch (settingsController.getDefaultDifficulty()) {
@@ -638,9 +655,12 @@ public class MineSweeperPrototype extends JFrame {
 
         });
 
-        history.addActionListener(e -> showHistory());
+        history.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	showHistory();});
 
         exit.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
             int r = JOptionPane.showConfirmDialog(
                     this,
                     safeT("msg.returnToLogin",safeT("msg.returnToLogin", "Return to login screen?")),
@@ -890,8 +910,12 @@ public class MineSweeperPrototype extends JFrame {
         start.setPreferredSize(new Dimension(200, 55));
         back.setPreferredSize(new Dimension(200, 55));
 
-        start.addActionListener(e -> startGame());
-        back.addActionListener(e -> showMenu());
+        start.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	startGame();});
+        back.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	showMenu();});
 
         actions.add(start);
         actions.add(back);
@@ -1270,10 +1294,13 @@ public class MineSweeperPrototype extends JFrame {
                     }
                 });
 
-                flag.addActionListener(ev -> toggleFlag(ownerIdx, rr, cc));
+                flag.addActionListener(ev -> {
+                	toggleFlag(ownerIdx, rr, cc);});
 
                 // REAL logic: call handleCellClick using underlying Board & Cell
-                cellButton.addActionListener(e -> handleCellClick(ownerIdx, rr, cc));
+                cellButton.addActionListener(e -> {
+                    handleCellClick(ownerIdx, rr, cc);
+                });
                 grid.add(cellButton);
             }
         }
@@ -1326,6 +1353,7 @@ public class MineSweeperPrototype extends JFrame {
 
         boolean wasFlagged = cell.isFlagged();
         cell.toggleFlag();
+        SoundManager.play(SoundManager.Sfx.FLAG);
         boolean flagged = cell.isFlagged();
 
         TileButton cellButton = buttons[ownerIdx][row][col];
@@ -1539,13 +1567,19 @@ public class MineSweeperPrototype extends JFrame {
         JButton menu = woodButton(safeT("btn.mainMenu","Main Menu"));
         JButton historyBtn = woodButton(safeT("btn.history",safeT("menu.history", "History")));
         historyBtn.setPreferredSize(new Dimension(110, 34));
-        historyBtn.addActionListener(e -> showHistory());
+        historyBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	showHistory();});
 
         help.setPreferredSize(new Dimension(90, 34));
         menu.setPreferredSize(new Dimension(90, 34));
 
-        help.addActionListener(e -> showHelp());
-        menu.addActionListener(e -> showMenu());
+        help.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	showHelp();});
+        menu.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	showMenu();});
 
         JLabel scoreTitle = new JLabel(safeT("lbl.score","Score:"));
         scoreTitle.setForeground(TEXT_PRIMARY);
@@ -1634,6 +1668,7 @@ public class MineSweeperPrototype extends JFrame {
 
         Timer t = new Timer(15, null);
         t.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
             int x = original.x + (int)(Math.random() * SHAKE_DISTANCE - SHAKE_DISTANCE/2);
             int y = original.y + (int)(Math.random() * SHAKE_DISTANCE - SHAKE_DISTANCE/2);
             setLocation(x, y);
@@ -1689,6 +1724,7 @@ public class MineSweeperPrototype extends JFrame {
             case MINE -> {
                 if (!cell.isRevealed()) {
                     cell.reveal();
+                    SoundManager.play(SoundManager.Sfx.BOOM);
                     updateButtonForCell(ownerIdx, cell);
                     bumpRevealedForCurrentTurn();
 
@@ -1717,6 +1753,11 @@ public class MineSweeperPrototype extends JFrame {
             case EMPTY -> {
                 if (!cell.isRevealed()) {
                     List<Cell> revealed = board.revealCascade(row, col);
+                    
+                    if (!revealed.isEmpty()) {
+                        SoundManager.play(SoundManager.Sfx.REVEAL); // ✅ play once per cascade
+                    }
+                    
                     for (Cell c : revealed) {
                         updateButtonForCell(ownerIdx, c);
                         bumpRevealedForCurrentTurn();
@@ -1739,6 +1780,7 @@ public class MineSweeperPrototype extends JFrame {
             case NUMBER -> {
                 if (!cell.isRevealed()) {
                     cell.reveal();
+                    SoundManager.play(SoundManager.Sfx.REVEAL);
                     updateButtonForCell(ownerIdx, cell);
                     bumpRevealedForCurrentTurn();
 
@@ -1810,8 +1852,6 @@ public class MineSweeperPrototype extends JFrame {
                         cell.setSpecialUsed(true);
                         updateButtonForCell(ownerIdx, cell);
 
-                        usedTurn = true;   // ✅ activation ends the turn
-
                     }
 
                     break;
@@ -1820,6 +1860,7 @@ public class MineSweeperPrototype extends JFrame {
                 // FIRST CLICK → Reveal (this DOES change turn)
                 if (!cell.isRevealed()) {
                     cell.reveal();
+                    SoundManager.play(SoundManager.Sfx.REVEAL);
                     updateButtonForCell(ownerIdx, cell);
                     bumpRevealedForCurrentTurn();
 
@@ -1897,7 +1938,6 @@ public class MineSweeperPrototype extends JFrame {
 
                         cell.setSpecialUsed(true);
                         updateButtonForCell(ownerIdx, cell);
-                        usedTurn = true;   // ✅ activation ends the turn
 
                     }
 
@@ -1907,6 +1947,7 @@ public class MineSweeperPrototype extends JFrame {
                 // FIRST CLICK → Reveal (this DOES change turn)
                 if (!cell.isRevealed()) {
                     cell.reveal();
+                    SoundManager.play(SoundManager.Sfx.REVEAL);
                     updateButtonForCell(ownerIdx, cell);
                     bumpRevealedForCurrentTurn();
 
@@ -1932,9 +1973,17 @@ public class MineSweeperPrototype extends JFrame {
         // ------------------------------------
         // CHECK WIN CONDITION
         // ------------------------------------
-        if (boards[ownerIdx].isAllSafeCellsRevealed()) {
-            String winner = (ownerIdx == 0 ? tfP1.getText().trim() : tfP2.getText().trim());
-            endGame(safeT("dlg.boardCleared", "Cleared Board"), winner);
+        if (areBothBoardsCleared()) {
+
+            SoundManager.play(SoundManager.Sfx.WIN); // 🔊 WIN SOUND
+
+            String p1 = tfP1.getText().trim();
+            String p2 = tfP2.getText().trim();
+
+            endGame(
+                safeT("dlg.boardCleared", "All boards cleared"),
+                p1 + " & " + p2
+            );
 
             if (fireworks != null) {
                 fireworks.startFireworks();
@@ -1945,6 +1994,11 @@ public class MineSweeperPrototype extends JFrame {
     }
 
 
+
+    private boolean areBothBoardsCleared() {
+        return boards[0].isAllSafeCellsRevealed()
+            && boards[1].isAllSafeCellsRevealed();
+    }
 
     private void updateButtonForCell(int ownerIdx, Cell cell) {
         TileButton btn = buttons[ownerIdx][cell.getRow()][cell.getCol()];
@@ -2301,9 +2355,11 @@ public class MineSweeperPrototype extends JFrame {
         updateSharedHearts();
 
         if (sharedLives == 0) {
+            SoundManager.play(SoundManager.Sfx.LOSE); // 🔊 LOSE SOUND
             endGame("Game Over (0 lives)", null);
             return;
         }
+
     }
 
 
@@ -2366,7 +2422,9 @@ public class MineSweeperPrototype extends JFrame {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setToolTipText(safeT("restart.title",safeT("restart.title", "Restart Game")));
 
-        btn.addActionListener(e -> confirmRestartGame());
+        btn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	confirmRestartGame();});
 
         return btn;
     }
@@ -2662,8 +2720,12 @@ public class MineSweeperPrototype extends JFrame {
         JButton closeBtn  = pillButtonLikeQuestionsFrame(safeT("btn.close", "Back"), BTN_OLIVE);
         closeBtn.setPreferredSize(new Dimension(260, 52));
 
-        exportBtn.addActionListener(e -> exportHistoryToCSV());
-        closeBtn.addActionListener(e -> dlg.dispose());
+        exportBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	exportHistoryToCSV();});
+        closeBtn.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	dlg.dispose();});
 
         bottom.add(exportBtn);
         bottom.add(closeBtn);

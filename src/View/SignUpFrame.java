@@ -5,6 +5,8 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import Model.SoundManager;
+
 
 public class SignUpFrame extends JFrame {
 
@@ -101,7 +103,9 @@ public class SignUpFrame extends JFrame {
         cbShowPass = new JCheckBox("👁 Show password");
         cbShowPass.setOpaque(false);
         cbShowPass.setForeground(new Color(200, 255, 230));
-        cbShowPass.addActionListener(e -> togglePassword());
+        cbShowPass.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	togglePassword();});
 
         btnCreate = createFrostedButton("Create");
         btnBack   = createFrostedButton("Back");
@@ -125,10 +129,20 @@ public class SignUpFrame extends JFrame {
         p.add(btnCreate);
         p.add(btnBack);
 
-        btnCreate.addActionListener(e -> doSignup());
+        btnCreate.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            doSignup();
+        });
+
         btnBack.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
             dispose();
             new LoginFrame();
+        });
+
+        btnExit.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            System.exit(0);
         });
 
         JPanel wrapper = new JPanel();
@@ -140,7 +154,9 @@ public class SignUpFrame extends JFrame {
         JPanel bottom = new JPanel();
         bottom.setOpaque(false);
         bottom.add(btnExit);
-        btnExit.addActionListener(e -> System.exit(0));
+        btnExit.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	System.exit(0);});
 
         wrapper.add(bottom);
         btnCreate.setUI(new javax.swing.plaf.basic.BasicButtonUI());

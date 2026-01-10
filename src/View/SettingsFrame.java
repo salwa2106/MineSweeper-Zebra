@@ -2,7 +2,7 @@ package View;
 
 import Controller.SettingsController;
 import Model.*;
-
+import Model.SoundManager;
 import javax.swing.*;
 import java.awt.*;
 
@@ -92,7 +92,7 @@ public class SettingsFrame extends JFrame {
         cbTheme.setFont(uiFont(Font.PLAIN, 14));
         cbTheme.setSelectedItem(SysData.getTheme());
 
-        JCheckBox cbAnim = themedCheck("Animations", gs.isAnimationsEnabled());
+
         JCheckBox cbAuto = themedCheck("Auto-save history", gs.isAutoSaveHistory());
 
         JPanel gameplay = centeredForm();
@@ -103,7 +103,6 @@ public class SettingsFrame extends JFrame {
 
         glass.add(gameplay);
         glass.add(Box.createVerticalStrut(8));
-        glass.add(cbAnim);
         glass.add(cbAuto);
 
         glass.add(Box.createVerticalStrut(18));
@@ -147,8 +146,7 @@ public class SettingsFrame extends JFrame {
         JButton cancel = frostedButton("Cancel");
 
         save.addActionListener(e -> {
-            controller.setSoundEnabled(cbSound.isSelected());
-            controller.setAnimationsEnabled(cbAnim.isSelected());
+        	controller.setSoundEnabled(cbSound.isSelected()); // keeps GameSettings updated
             controller.setAutoSaveHistory(cbAuto.isSelected());
             controller.setMaxSharedLives(lives.getValue());
 
@@ -158,6 +156,7 @@ public class SettingsFrame extends JFrame {
                     Difficulty.EASY
             );
 
+            SoundManager.play(SoundManager.Sfx.CLICK);
             Language lang = cbLang.getSelectedIndex() == 1 ? Language.HE : Language.EN;
             controller.setLanguage(lang);
             SysData.setLanguage(lang);
@@ -165,14 +164,20 @@ public class SettingsFrame extends JFrame {
             SysData.setTheme((ThemeType) cbTheme.getSelectedItem());
             SysData.setMusicEnabled(cbMusic.isSelected());
 
-            MusicManager.play("assets/ice/music.wav");
-
+            if (SysData.isMusicEnabled()) {
+                MusicManager.play(SysData.getTheme().assets.music); // or your chosen track
+            } else {
+                MusicManager.stop(); // you need this method in MusicManager
+            }
 
             if (onSaved != null) onSaved.run();
             dispose();
         });
 
-        cancel.addActionListener(e -> dispose());
+        cancel.addActionListener(e -> {
+        	SoundManager.play(SoundManager.Sfx.CLICK);
+        	dispose();
+        	});
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
         actions.setOpaque(false);
@@ -262,6 +267,7 @@ public class SettingsFrame extends JFrame {
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setPreferredSize(new Dimension(140, 42));
+        b.addActionListener(e -> SoundManager.play(SoundManager.Sfx.CLICK));
         return b;
     }
 

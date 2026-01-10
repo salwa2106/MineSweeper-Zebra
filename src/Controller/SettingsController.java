@@ -5,6 +5,8 @@ import Model.Difficulty;
 import Model.GameSettings;
 import Model.Language;
 import Model.QuestionSettings;
+import Model.SoundManager;
+
 
 public class SettingsController {
 
@@ -17,10 +19,10 @@ public class SettingsController {
 
     // ===================== GAME SETTINGS (MVC) =====================
     public boolean isSoundEnabled() { return gameSettings.isSoundEnabled(); }
-    public void setSoundEnabled(boolean v) { gameSettings.setSoundEnabled(v); }
-
-    public boolean isAnimationsEnabled() { return gameSettings.isAnimationsEnabled(); }
-    public void setAnimationsEnabled(boolean v) { gameSettings.setAnimationsEnabled(v); }
+    public void setSoundEnabled(boolean enabled) {
+        gameSettings.setSoundEnabled(enabled);     // save value in settings object
+        SoundManager.setEnabled(enabled);          // apply immediately
+    }
 
     public boolean isAutoSaveHistory() { return gameSettings.isAutoSaveHistory(); }
     public void setAutoSaveHistory(boolean v) { gameSettings.setAutoSaveHistory(v); }
