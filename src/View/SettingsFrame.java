@@ -24,6 +24,8 @@ public class SettingsFrame extends JFrame {
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setUndecorated(true);
+        setBackground(new Color(0, 0, 0, 0));   // ✅ transparent window
+        getContentPane().setBackground(new Color(0, 0, 0, 0));
         setLocationRelativeTo(null);
 
         setContentPane(buildContent());
@@ -220,7 +222,7 @@ public class SettingsFrame extends JFrame {
         JPanel p = new JPanel() {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g;
-                g2.setColor(new Color(20, 35, 35, 190));
+                g2.setColor(new Color(15, 25, 20, 220));
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 40, 40);
                 g2.setColor(BORDER);
                 g2.setStroke(new BasicStroke(3));
@@ -275,7 +277,7 @@ public class SettingsFrame extends JFrame {
 
     private JComponent wrapBackground(JComponent center) {
         JPanel bg = new JPanel(new GridBagLayout());
-        bg.setBackground(new Color(10, 15, 15));
+        bg.setOpaque(false); // ✅ transparent (no grey)
         bg.add(center);
         return bg;
     }
