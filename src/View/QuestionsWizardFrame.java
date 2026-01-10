@@ -46,6 +46,10 @@ public class QuestionsWizardFrame extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1100, 650));
         setLocationRelativeTo(null);
+        
+        setUndecorated(true);
+        setBackground(new Color(0, 0, 0, 0)); // ✅ THIS LINE
+
 
         setContentPane(buildUI());
         SysData.applyGlobalFont(this);
@@ -53,21 +57,38 @@ public class QuestionsWizardFrame extends JFrame {
     }
 
     private JComponent buildUI() {
-        JPanel bg = new BackgroundImagePanel("assets/forest/bg_forest.jpg");
-        bg.setLayout(new BorderLayout());
-        bg.setBorder(new EmptyBorder(35, 60, 35, 60));
 
+        // ===== BACKGROUND =====
+    	JPanel bg = new JPanel(new GridBagLayout());
+    	bg.setOpaque(false); // ✅ important
+        bg.setLayout(new GridBagLayout());
+
+        // ===== FROSTED CARD (same size as Settings) =====
         JPanel glass = new FrostedCardPanel();
         glass.setLayout(new BorderLayout(18, 18));
         glass.setBorder(new EmptyBorder(18, 18, 18, 18));
 
+        Dimension cardSize = new Dimension(1050, 720); // bigger + wider
+        glass.setPreferredSize(cardSize);
+        glass.setMinimumSize(cardSize);
+        glass.setMaximumSize(cardSize);
+
+        // ===== TITLE =====
         JLabel title = new JLabel("QUESTIONS WIZARD", SwingConstants.CENTER);
         title.setFont(new Font("Georgia", Font.BOLD, 28));
         title.setForeground(new Color(210, 255, 235));
         glass.add(title, BorderLayout.NORTH);
 
-        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 8));
+        // ===== TOP BAR (2 ROWS) =====
+        JPanel topBar = new JPanel();
         topBar.setOpaque(false);
+        topBar.setLayout(new BoxLayout(topBar, BoxLayout.Y_AXIS));
+
+        JPanel row1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 8));
+        row1.setOpaque(false);
+
+        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 8));
+        row2.setOpaque(false);
 
         JButton importBtn = pillButton("Import CSV", BTN_GREEN);
         JButton exportBtn = pillButton("Export CSV", BTN_GREEN);
@@ -75,13 +96,17 @@ public class QuestionsWizardFrame extends JFrame {
         JButton editBtn   = pillButton("Edit", BTN_OLIVE);
         JButton deleteBtn = pillButton("Delete", BTN_RED);
 
-        topBar.add(importBtn);
-        topBar.add(exportBtn);
-        topBar.add(addBtn);
-        topBar.add(editBtn);
-        topBar.add(deleteBtn);
+        row1.add(importBtn);
+        row1.add(exportBtn);
 
-        // Table (NOW uses Model.Question)
+        row2.add(addBtn);
+        row2.add(editBtn);
+        row2.add(deleteBtn);
+
+        topBar.add(row1);
+        topBar.add(row2);
+
+        // ===== TABLE =====
         tableModel = new QuestionsTableModel();
         table = new JTable(tableModel);
         styleTable(table);
@@ -99,6 +124,7 @@ public class QuestionsWizardFrame extends JFrame {
 
         glass.add(center, BorderLayout.CENTER);
 
+        // ===== BOTTOM =====
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 8));
         bottom.setOpaque(false);
 
@@ -108,17 +134,27 @@ public class QuestionsWizardFrame extends JFrame {
 
         glass.add(bottom, BorderLayout.SOUTH);
 
-        bg.add(glass, BorderLayout.CENTER);
+        // ===== CENTER CARD ON SCREEN =====
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
 
-        // Load data
+        bg.add(glass, gbc);
+
+        // ===== LOAD DATA =====
         reloadFromModel();
 
-        // Actions
+        // ===== ACTIONS =====
         importBtn.addActionListener(e -> onImportCsv());
         exportBtn.addActionListener(e -> onExportCsv());
         addBtn.addActionListener(e -> onAdd());
         editBtn.addActionListener(e -> onEdit());
         deleteBtn.addActionListener(e -> onDelete());
+
         backBtn.addActionListener(e -> {
             dispose();
             if (onBack != null) onBack.run();
@@ -126,6 +162,8 @@ public class QuestionsWizardFrame extends JFrame {
 
         return bg;
     }
+
+
 
     private void reloadFromModel() {
         List<Question> rows = new ArrayList<>(controller.getAllQuestions());
@@ -318,24 +356,7 @@ public class QuestionsWizardFrame extends JFrame {
         void deleteQuestionAtIndex(int index) throws Exception;
     }
 
-    // ====== BACKGROUND PANEL ======
-    private static class BackgroundImagePanel extends JPanel {
-        private final Image img;
-        public BackgroundImagePanel(String path) {
-            ImageIcon ic = new ImageIcon(path);
-            this.img = ic.getImage();
-        }
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (img != null) g.drawImage(img, 0, 0, getWidth(), getHeight(), this);
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setColor(new Color(0, 0, 0, 110));
-            g2.fillRect(0, 0, getWidth(), getHeight());
-            g2.dispose();
-        }
-    }
-
+  
     private static class FrostedCardPanel extends JPanel {
         public FrostedCardPanel() { setOpaque(false); }
         @Override protected void paintComponent(Graphics g) {
