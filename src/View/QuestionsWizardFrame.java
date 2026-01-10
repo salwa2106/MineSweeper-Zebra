@@ -3,6 +3,7 @@ package View;
 import Model.Question;
 import Model.SoundManager;
 import Model.SysData;
+import Model.ThemeType;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -16,17 +17,11 @@ import java.util.List;
 
 /**
  * Full-screen Questions Wizard screen (Import/Export/Add/Edit/Delete + Table + Back)
+ * The UI colors auto-follow the selected ThemeType via ThemePalette (Option A).
  */
 public class QuestionsWizardFrame extends JFrame {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	// ====== THEME ======
-    private static final Color BTN_GREEN = new Color(40, 160, 90);
-    private static final Color BTN_OLIVE = new Color(85, 110, 70);
-    private static final Color BTN_RED   = new Color(185, 60, 60);
+    private static final long serialVersionUID = 1L;
 
     // ====== MVC HOOK ======
     private final QuestionsController controller;
@@ -47,29 +42,30 @@ public class QuestionsWizardFrame extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1100, 650));
         setLocationRelativeTo(null);
-        
-        setUndecorated(true);
-        setBackground(new Color(0, 0, 0, 0)); // ✅ THIS LINE
 
+        setUndecorated(true);
+        setBackground(new Color(0, 0, 0, 0)); // ✅ transparent window
 
         setContentPane(buildUI());
         SysData.applyGlobalFont(this);
-
     }
 
     private JComponent buildUI() {
 
-        // ===== BACKGROUND =====
-    	JPanel bg = new JPanel(new GridBagLayout());
-    	bg.setOpaque(false); // ✅ important
-        bg.setLayout(new GridBagLayout());
+        // ===== PALETTE FROM CURRENT THEME =====
+        ThemeType currentTheme = SysData.getTheme();
+        ThemePalette pal = ThemePalette.of(currentTheme);
 
-        // ===== FROSTED CARD (same size as Settings) =====
-        JPanel glass = new FrostedCardPanel();
+        // ===== BACKGROUND =====
+        JPanel bg = new JPanel(new GridBagLayout());
+        bg.setOpaque(false);
+
+        // ===== FROSTED CARD =====
+        JPanel glass = new FrostedCardPanel(pal);
         glass.setLayout(new BorderLayout(18, 18));
         glass.setBorder(new EmptyBorder(18, 18, 18, 18));
 
-        Dimension cardSize = new Dimension(1050, 720); // bigger + wider
+        Dimension cardSize = new Dimension(1050, 720);
         glass.setPreferredSize(cardSize);
         glass.setMinimumSize(cardSize);
         glass.setMaximumSize(cardSize);
@@ -91,11 +87,12 @@ public class QuestionsWizardFrame extends JFrame {
         JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 8));
         row2.setOpaque(false);
 
-        JButton importBtn = pillButton("Import CSV", BTN_GREEN);
-        JButton exportBtn = pillButton("Export CSV", BTN_GREEN);
-        JButton addBtn    = pillButton("Add", BTN_OLIVE);
-        JButton editBtn   = pillButton("Edit", BTN_OLIVE);
-        JButton deleteBtn = pillButton("Delete", BTN_RED);
+        // ✅ Theme-aware buttons
+        JButton importBtn = new PillButton("Import CSV", pal.primary);
+        JButton exportBtn = new PillButton("Export CSV", pal.primary);
+        JButton addBtn    = new PillButton("Add", pal.secondary);
+        JButton editBtn   = new PillButton("Edit", pal.secondary);
+        JButton deleteBtn = new PillButton("Delete", pal.danger);
 
         row1.add(importBtn);
         row1.add(exportBtn);
@@ -110,7 +107,7 @@ public class QuestionsWizardFrame extends JFrame {
         // ===== TABLE =====
         tableModel = new QuestionsTableModel();
         table = new JTable(tableModel);
-        styleTable(table);
+        styleTable(table, pal);
         table.setFillsViewportHeight(true);
 
         JScrollPane sp = new JScrollPane(table);
@@ -129,7 +126,7 @@ public class QuestionsWizardFrame extends JFrame {
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 8));
         bottom.setOpaque(false);
 
-        JButton backBtn = pillButton("Back", BTN_OLIVE);
+        JButton backBtn = new PillButton("Back", pal.secondary);
         backBtn.setPreferredSize(new Dimension(260, 52));
         bottom.add(backBtn);
 
@@ -149,39 +146,40 @@ public class QuestionsWizardFrame extends JFrame {
         // ===== LOAD DATA =====
         reloadFromModel();
 
-        // ===== ACTIONS =====
-        importBtn.addActionListener(e -> onImportCsv());
-        exportBtn.addActionListener(e -> onExportCsv());
-        addBtn.addActionListener(e -> onAdd());
-        editBtn.addActionListener(e -> onEdit());
-        deleteBtn.addActionListener(e -> onDelete());
-
-        // Actions
+        // ===== ACTIONS (NO DUPLICATES) =====
         importBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	onImportCsv();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            onImportCsv();
+        });
+
         exportBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	onExportCsv();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            onExportCsv();
+        });
+
         addBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	onAdd();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            onAdd();
+        });
+
         editBtn.addActionListener(e -> {
             SoundManager.play(SoundManager.Sfx.CLICK);
-            onEdit();});
+            onEdit();
+        });
+
         deleteBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	onDelete();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            onDelete();
+        });
+
         backBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
+            SoundManager.play(SoundManager.Sfx.CLICK);
             dispose();
             if (onBack != null) onBack.run();
         });
 
         return bg;
     }
-
-
 
     private void reloadFromModel() {
         List<Question> rows = new ArrayList<>(controller.getAllQuestions());
@@ -248,7 +246,6 @@ public class QuestionsWizardFrame extends JFrame {
         if (edited == null) return;
 
         try {
-            // Without an ID field in Model.Question, update by selected index
             controller.updateQuestionAtIndex(r, edited);
             reloadFromModel();
         } catch (Exception ex) {
@@ -279,33 +276,12 @@ public class QuestionsWizardFrame extends JFrame {
         }
     }
 
-    // ====== UI HELPERS ======
-    private JButton pillButton(String text, Color bg) {
-        JButton base = new JButton(text);
-        base.setFont(new Font("Georgia", Font.BOLD, 16));
-        base.setForeground(Color.WHITE);
-        base.setFocusPainted(false);
-        base.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        base.setBorderPainted(false);
-        base.setContentAreaFilled(false);
-        base.setOpaque(false);
-        base.setPreferredSize(new Dimension(190, 52));
-
-        base.setUI(new javax.swing.plaf.basic.BasicButtonUI());
-        base.setBorder(new EmptyBorder(10, 18, 10, 18));
-
-        PaintedButton painted = new PaintedButton(base, bg);
-        painted.addChangeListener(e -> painted.repaint());
-
-        return painted;
-    }
-
-    private void styleTable(JTable t) {
+    private void styleTable(JTable t, ThemePalette pal) {
         t.setRowHeight(34);
         t.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        t.setForeground(new Color(235, 255, 245));
+        t.setForeground(pal.text);
         t.setBackground(new Color(10, 15, 15, 180));
-        t.setSelectionBackground(new Color(60, 90, 80));
+        t.setSelectionBackground(pal.secondary.darker());
         t.setSelectionForeground(Color.WHITE);
         t.setShowGrid(false);
         t.setFillsViewportHeight(true);
@@ -316,7 +292,7 @@ public class QuestionsWizardFrame extends JFrame {
             l.setOpaque(true);
             l.setFont(new Font("Georgia", Font.BOLD, 15));
             l.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-            l.setBackground(new Color(35, 60, 45));
+            l.setBackground(pal.secondary.darker());
             l.setForeground(new Color(245, 255, 250));
             return l;
         });
@@ -352,7 +328,7 @@ public class QuestionsWizardFrame extends JFrame {
                 case 3 -> q.getOptB();
                 case 4 -> q.getOptC();
                 case 5 -> q.getOptD();
-                case 6 -> String.valueOf(q.getCorrect()); // ✅ A/B/C/D
+                case 6 -> String.valueOf(q.getCorrect());
                 case 7 -> q.getPointsRight();
                 case 8 -> q.getPointsWrong();
                 case 9 -> q.getLifeDelta();
@@ -369,60 +345,33 @@ public class QuestionsWizardFrame extends JFrame {
 
         void addQuestion(Question q) throws Exception;
 
-        // Because Model.Question has no ID, we update/delete by row index:
         void updateQuestionAtIndex(int index, Question q) throws Exception;
         void deleteQuestionAtIndex(int index) throws Exception;
     }
 
-  
+    // ===== Frosted Card uses palette =====
     private static class FrostedCardPanel extends JPanel {
-        public FrostedCardPanel() { setOpaque(false); }
-        @Override protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(15, 25, 20, 200));
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 26, 26);
-            g2.setColor(new Color(170, 255, 255, 120));
-            g2.setStroke(new BasicStroke(2f));
-            g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, 24, 24);
-            g2.dispose();
-        }
-    }
+        private final ThemePalette pal;
 
-    private static class PaintedButton extends JButton {
-        private final Color base;
-        public PaintedButton(JButton delegate, Color base) {
-            super(delegate.getText());
-            this.base = base;
-            setFont(delegate.getFont());
-            setForeground(delegate.getForeground());
-            setFocusPainted(false);
-            setBorderPainted(false);
-            setContentAreaFilled(false);
-            setCursor(delegate.getCursor());
-            setPreferredSize(delegate.getPreferredSize());
-            setBorder(delegate.getBorder());
+        public FrostedCardPanel(ThemePalette pal) {
+            this.pal = pal;
+            setOpaque(false);
         }
 
         @Override
         protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            Color bg = base;
-            if (getModel().isPressed()) bg = bg.darker();
-            else if (getModel().isRollover()) bg = bg.brighter();
+            g2.setColor(pal.cardBg);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 26, 26);
 
-            g2.setColor(bg);
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-
-            g2.setColor(new Color(255, 255, 255, 70));
+            g2.setColor(pal.stroke);
             g2.setStroke(new BasicStroke(2f));
-            g2.drawRoundRect(1, 1, getWidth()-2, getHeight()-2, 18, 18);
+            g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 24, 24);
 
             g2.dispose();
-            super.paintComponent(g);
         }
     }
 
@@ -479,7 +428,7 @@ public class QuestionsWizardFrame extends JFrame {
             actions.add(cancel);
 
             ok.addActionListener(e -> {
-            	SoundManager.play(SoundManager.Sfx.CLICK);
+                SoundManager.play(SoundManager.Sfx.CLICK);
                 if (tfQuestion.getText().trim().isEmpty()) {
                     JOptionPane.showMessageDialog(this, "Question text is required.");
                     return;
@@ -501,8 +450,9 @@ public class QuestionsWizardFrame extends JFrame {
             });
 
             cancel.addActionListener(e -> {
-            	SoundManager.play(SoundManager.Sfx.CLICK);
-            	dispose();});
+                SoundManager.play(SoundManager.Sfx.CLICK);
+                dispose();
+            });
 
             getContentPane().setLayout(new BorderLayout());
             getContentPane().add(p, BorderLayout.CENTER);

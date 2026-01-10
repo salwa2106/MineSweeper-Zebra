@@ -2641,9 +2641,8 @@ public class MineSweeperPrototype extends JFrame {
             return;
         }
 
-        // ===== Theme colors (same as QuestionsWizardFrame) =====
-        final Color BTN_GREEN = new Color(40, 160, 90);
-        final Color BTN_OLIVE = new Color(85, 110, 70);
+        // ===== Theme colors (Option A) =====
+        ThemePalette pal = ThemePalette.of(SysData.getTheme());
 
         // ===== Columns (localized) =====
         String[] cols = new String[] {
@@ -2670,7 +2669,7 @@ public class MineSweeperPrototype extends JFrame {
         };
 
         JTable table = new JTable(model);
-        styleTableLikeQuestionsFrame(table);
+        styleTableLikeQuestionsFrame(table); // keep your existing styling (works fine)
         table.setFillsViewportHeight(true);
 
         JScrollPane sp = new JScrollPane(table);
@@ -2682,9 +2681,8 @@ public class MineSweeperPrototype extends JFrame {
         JDialog dlg = new JDialog(this, safeT("history.title", "Game History"), true);
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
-        // IMPORTANT: must be before setVisible
-        dlg.setUndecorated(true);                    // ✅ needed for transparency
-        dlg.setBackground(new Color(0, 0, 0, 0));    // ✅ transparent window
+        dlg.setUndecorated(true);
+        dlg.setBackground(new Color(0, 0, 0, 0));
 
         Rectangle bounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         dlg.setBounds(bounds);
@@ -2694,12 +2692,11 @@ public class MineSweeperPrototype extends JFrame {
         JPanel bg = new JPanel(new GridBagLayout());
         bg.setOpaque(false);
 
-        // ===== Frosted card =====
-        JPanel glass = new FrostedCardPanel();
+        // ===== Frosted card (theme-aware) =====
+        JPanel glass = new FrostedCardPanel(pal);
         glass.setLayout(new BorderLayout(18, 18));
         glass.setBorder(new javax.swing.border.EmptyBorder(18, 18, 18, 18));
 
-        // Bigger card so table is clearer
         Dimension cardSize = new Dimension(1200, 760);
         glass.setPreferredSize(cardSize);
         glass.setMinimumSize(cardSize);
@@ -2712,24 +2709,26 @@ public class MineSweeperPrototype extends JFrame {
 
         glass.add(sp, BorderLayout.CENTER);
 
-        // ===== Bottom buttons =====
+        // ===== Bottom buttons (Option A) =====
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 8));
         bottom.setOpaque(false);
 
-        JButton exportBtn = pillButtonLikeQuestionsFrame(safeT("history.export", "Export CSV"), BTN_GREEN);
-        JButton closeBtn  = pillButtonLikeQuestionsFrame(safeT("btn.close", "Back"), BTN_OLIVE);
+        JButton exportBtn = new PillButton(safeT("history.export", "Export CSV"), pal.primary);
+        JButton closeBtn  = new PillButton(safeT("btn.close", "Back"), pal.secondary);
         closeBtn.setPreferredSize(new Dimension(260, 52));
 
         exportBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	exportHistoryToCSV();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            exportHistoryToCSV();
+        });
+
         closeBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	dlg.dispose();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            dlg.dispose();
+        });
 
         bottom.add(exportBtn);
         bottom.add(closeBtn);
-
         glass.add(bottom, BorderLayout.SOUTH);
 
         // ===== Center the card =====
@@ -2740,7 +2739,6 @@ public class MineSweeperPrototype extends JFrame {
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 1;
         gbc.weighty = 1;
-
         bg.add(glass, gbc);
 
         dlg.setContentPane(bg);
@@ -2748,6 +2746,7 @@ public class MineSweeperPrototype extends JFrame {
 
         dlg.setVisible(true);
     }
+
 
 
     private void styleTableLikeQuestionsFrame(JTable t) {
