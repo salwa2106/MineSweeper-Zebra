@@ -594,18 +594,17 @@ public class MineSweeperPrototype extends JFrame {
         glass.add(Box.createVerticalStrut(40));
 
         // ✅ Create ALL 6 buttons
-        JButton newGame = createFrostedButton(safeT("menu.newGame", "New Game"));
-        resumeButton = createFrostedButton(safeT("menu.resume", "Resume"));
-        JButton settings = createFrostedButton(safeT("menu.settings", "Settings"));
+        ThemePalette pal = ThemePalette.of(SysData.getTheme());
 
-        JButton history = createFrostedButton(safeT("menu.history", "History"));
-        JButton exit = createFrostedButton(safeT("btn.exit",safeT("menu.exit", "Exit")));
+        JButton newGame = createFrostedButton(safeT("menu.newGame", "New Game"), pal);
+        resumeButton    = createFrostedButton(safeT("menu.resume", "Resume"), pal);
+        JButton settings= createFrostedButton(safeT("menu.settings", "Settings"), pal);
+        JButton history = createFrostedButton(safeT("menu.history", "History"), pal);
+        JButton exit    = createFrostedButton(safeT("btn.exit", safeT("menu.exit", "Exit")), pal);
+
         JButton questionsBtn = null;
         if (SysData.isAdmin()) {
-            questionsBtn = createFrostedButton("Questions");
-            questionsBtn.addActionListener(e -> {
-            	SoundManager.play(SoundManager.Sfx.CLICK);
-            	openQuestionsWizard();});
+            questionsBtn = createFrostedButton("Questions", pal);
         }
 
 
@@ -759,9 +758,8 @@ public class MineSweeperPrototype extends JFrame {
 
 
 
-    private JButton createFrostedButton(String text) {
+    private JButton createFrostedButton(String text, ThemePalette pal) {
         JButton b = new JButton(text) {
-
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -770,26 +768,28 @@ public class MineSweeperPrototype extends JFrame {
                 boolean hover = getModel().isRollover();
                 boolean pressed = getModel().isPressed();
 
-                // --- Background ---
-                Color base   = new Color(50, 80, 65, 220);
-                Color hoverC = new Color(70, 115, 95, 235);
-                Color pressC = new Color(40, 65, 55, 240);
+                // ---- base colors from theme ----
+                Color base   = withAlpha(pal.primary, 220);
+                Color hoverC = withAlpha(pal.primary.brighter(), 235);
+                Color pressC = withAlpha(pal.primary.darker(), 240);
 
                 Color bg = pressed ? pressC : (hover ? hoverC : base);
+
+                // background
                 g2.setColor(bg);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
 
-                // --- Border Glow ---
+                // border / glow
                 g2.setStroke(new BasicStroke(2f));
-                g2.setColor(new Color(180, 255, 245, hover ? 220 : 140));
+                g2.setColor(withAlpha(pal.stroke, hover ? 220 : 140));
                 g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 16, 16);
 
-                // --- Text (draw manually for clarity) ---
+                // text
                 FontMetrics fm = g2.getFontMetrics();
                 int textW = fm.stringWidth(getText());
                 int textH = fm.getAscent();
 
-                g2.setColor(new Color(235, 255, 250));
+                g2.setColor(pal.text);
                 g2.drawString(
                         getText(),
                         (getWidth() - textW) / 2,
@@ -800,16 +800,23 @@ public class MineSweeperPrototype extends JFrame {
             }
         };
 
-        b.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 15));
+        boolean he = (SysData.getI18n()!=null && SysData.getI18n().isHebrew());
+        b.setFont(new Font(he ? "SansSerif" : "Georgia", Font.BOLD, 15));
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.setBorderPainted(false);
         b.setContentAreaFilled(false);
-        b.setOpaque(true); // IMPORTANT
+        b.setOpaque(false);
         b.setPreferredSize(new Dimension(140, 36));
 
         return b;
     }
+
+    private static Color withAlpha(Color c, int a) {
+        a = Math.max(0, Math.min(255, a));
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), a);
+    }
+
 
 
 
@@ -904,8 +911,10 @@ public class MineSweeperPrototype extends JFrame {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         actions.setOpaque(false);
 
-        JButton start = createFrostedButton(safeT("newgame.start", "Start Game"));
-        JButton back  = createFrostedButton(safeT("btn.back", "Back"));
+        ThemePalette pal = ThemePalette.of(SysData.getTheme());
+
+        JButton start = createFrostedButton(safeT("newgame.start", "Start Game"), pal);
+        JButton back  = createFrostedButton(safeT("btn.back", "Back"), pal);
 
         start.setPreferredSize(new Dimension(200, 55));
         back.setPreferredSize(new Dimension(200, 55));
