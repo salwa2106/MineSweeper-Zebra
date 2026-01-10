@@ -2812,19 +2812,47 @@ public class MineSweeperPrototype extends JFrame {
     }
 
     private static class FrostedCardPanel extends JPanel {
-        public FrostedCardPanel() { setOpaque(false); }
-        @Override protected void paintComponent(Graphics g) {
+        private final ThemePalette pal; // can be null (fallback)
+
+        public FrostedCardPanel() {
+            this.pal = null;
+            setOpaque(false);
+        }
+
+        public FrostedCardPanel(ThemePalette pal) {
+            this.pal = pal;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(new Color(15, 25, 20, 200));
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 26, 26);
-            g2.setColor(new Color(170, 255, 255, 120));
-            g2.setStroke(new BasicStroke(2f));
-            g2.drawRoundRect(2, 2, getWidth()-4, getHeight()-4, 24, 24);
+
+            // ✅ if a theme palette is provided → use it
+            if (pal != null) {
+                g2.setColor(pal.cardBg);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 26, 26);
+
+                g2.setColor(pal.stroke);
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 24, 24);
+            }
+            // ✅ otherwise fallback to your original hardcoded colors
+            else {
+                g2.setColor(new Color(15, 25, 20, 200));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 26, 26);
+
+                g2.setColor(new Color(170, 255, 255, 120));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 24, 24);
+            }
+
             g2.dispose();
         }
     }
+
 
     private static class PaintedButton extends JButton {
         private final Color base;
