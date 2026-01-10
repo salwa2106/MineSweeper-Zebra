@@ -1,5 +1,5 @@
 Question,OptA,OptB,OptC,OptD,Correct,PointsRight,PointsWrong,LifeDelta,Difficulty
-What is the capital of France?,London123,Berlin,Paris,Madrid,C,3,-1,1,easy
+What is the capital of France?,London,Berlin,Paris,Madrid,C,3,-1,1,easy
 Which planet is known as the Red Planet?,Earth,Venus,Mars,Jupiter,C,3,-1,1,easy
 How many legs does a spider have?,6,8,10,12,B,3,-1,1,easy
 Who wrote 'Romeo and Juliet'?,Shakespeare,Dickens,Tolkien,Rowling,A,3,-1,1,medium
