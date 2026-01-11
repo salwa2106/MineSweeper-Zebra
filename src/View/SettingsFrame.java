@@ -52,7 +52,10 @@ public class SettingsFrame extends JFrame {
         glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
 
         // ---------- TITLE ----------
-        JLabel title = new JLabel("SETTINGS", SwingConstants.CENTER);
+        JLabel title = new JLabel(
+                safeT("settings.title", "Settings"),
+                SwingConstants.CENTER
+        );
         title.setFont(uiFont(Font.BOLD, 28));
         title.setForeground(new Color(190, 255, 220));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -61,16 +64,15 @@ public class SettingsFrame extends JFrame {
         glass.add(Box.createVerticalStrut(18));
 
         // ---------- GAMEPLAY ----------
-        glass.add(sectionTitle("Gameplay"));
+        glass.add(sectionTitle(safeT("section.gameplay", "Gameplay")));
+       
 
-        JComboBox<String> cbDiff = new JComboBox<>(new String[]{
-                "Easy", "Medium", "Hard"
-        });
+
+        JComboBox<Difficulty> cbDiff = new JComboBox<>(Difficulty.values());
+        cbDiff.setSelectedItem(gs.getDefaultDifficulty());
         styleCombo(cbDiff);
-        cbDiff.setSelectedIndex(
-                gs.getDefaultDifficulty() == Difficulty.MEDIUM ? 1 :
-                gs.getDefaultDifficulty() == Difficulty.HARD ? 2 : 0
-        );
+
+  
 
         JSlider lives = new JSlider(JSlider.HORIZONTAL, 1, 10, gs.getMaxSharedLives());
 
@@ -84,7 +86,9 @@ public class SettingsFrame extends JFrame {
         styleSlider(lives);
 
 
-        JComboBox<String> cbLang = new JComboBox<>(new String[]{"English", "Hebrew"});
+        JComboBox<Language> cbLang = new JComboBox<>(Language.values());
+        cbLang.setSelectedItem(SysData.getLanguage());
+
         styleCombo(cbLang);
         cbLang.setSelectedIndex(gs.getLanguage() == Language.HE ? 1 : 0);
 
@@ -93,13 +97,14 @@ public class SettingsFrame extends JFrame {
         cbTheme.setSelectedItem(SysData.getTheme());
 
 
-        JCheckBox cbAuto = themedCheck("Auto-save history", gs.isAutoSaveHistory());
+        JCheckBox cbAuto  = themedCheck(safeT("settings.autosave","Auto-save history"), gs.isAutoSaveHistory());
 
         JPanel gameplay = centeredForm();
-        addRow(gameplay, 0, "Difficulty:", cbDiff);
-        addRow(gameplay, 1, "Shared lives:", lives);
-        addRow(gameplay, 2, "Language:", cbLang);
-        addRow(gameplay, 3, "Theme:", cbTheme);
+        addRow(gameplay, 0, safeT("settings.defaultDifficulty","Default difficulty:"), cbDiff);
+        addRow(gameplay, 1, safeT("settings.maxLives","Max shared lives:"), lives);
+        addRow(gameplay, 2, safeT("lbl.language","Language"), cbLang);
+        addRow(gameplay, 3, safeT("lbl.theme","Theme"), cbTheme);
+
 
         glass.add(gameplay);
         glass.add(Box.createVerticalStrut(8));
@@ -108,7 +113,7 @@ public class SettingsFrame extends JFrame {
         glass.add(Box.createVerticalStrut(18));
 
         // ---------- AUDIO ----------
-        glass.add(sectionTitle("Audio"));
+        glass.add(sectionTitle(safeT("section.audio", "Audio")));
 
         JSlider volume = new JSlider(JSlider.HORIZONTAL, 0, 100,
                 (int) (SysData.getMusicVolume() * 100));
@@ -128,11 +133,11 @@ public class SettingsFrame extends JFrame {
             MusicManager.applyVolume();
         });
 
-        JCheckBox cbSound = themedCheck("Sound effects", gs.isSoundEnabled());
-        JCheckBox cbMusic = themedCheck("Background music", SysData.isMusicEnabled());
+        JCheckBox cbSound = themedCheck(safeT("settings.sound","Sound effects"), gs.isSoundEnabled());
+        JCheckBox cbMusic = themedCheck(safeT("settings.music","Background music"), SysData.isMusicEnabled()); // צריך להוסיף key אם אין
 
         JPanel audio = centeredForm();
-        addRow(audio, 0, "Music volume:", volume);
+        addRow(audio, 0, safeT("settings.musicVolume","Music volume:"), volume);
 
         glass.add(audio);
         glass.add(Box.createVerticalStrut(8));
@@ -142,25 +147,22 @@ public class SettingsFrame extends JFrame {
         glass.add(Box.createVerticalStrut(20));
 
         // ---------- ACTIONS ----------
-        JButton save = frostedButton("Save");
-        JButton cancel = frostedButton("Cancel");
+        JButton save   = frostedButton(safeT("btn.save","Save"));
+        JButton cancel = frostedButton(safeT("btn.cancel","Cancel"));
 
         save.addActionListener(e -> {
         	controller.setSoundEnabled(cbSound.isSelected()); // keeps GameSettings updated
             controller.setAutoSaveHistory(cbAuto.isSelected());
             controller.setMaxSharedLives(lives.getValue());
+            Difficulty selected = (Difficulty) cbDiff.getSelectedItem();
+            controller.setDefaultDifficulty(selected);
 
-            controller.setDefaultDifficulty(
-                    cbDiff.getSelectedIndex() == 1 ? Difficulty.MEDIUM :
-                    cbDiff.getSelectedIndex() == 2 ? Difficulty.HARD :
-                    Difficulty.EASY
-            );
+
 
             SoundManager.play(SoundManager.Sfx.CLICK);
-            Language lang = cbLang.getSelectedIndex() == 1 ? Language.HE : Language.EN;
+            Language lang = (Language) cbLang.getSelectedItem();
             controller.setLanguage(lang);
             SysData.setLanguage(lang);
-
             SysData.setTheme((ThemeType) cbTheme.getSelectedItem());
             SysData.setMusicEnabled(cbMusic.isSelected());
 

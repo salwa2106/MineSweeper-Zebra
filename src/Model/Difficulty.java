@@ -1,5 +1,7 @@
 package Model;
 
+import Model.SysData;   // אם לא כבר מיובא
+
 public enum Difficulty {
     EASY(9, 9, 10, 6, 2, 10, 10, 5),
     MEDIUM(13, 13, 26, 10, 3, 8, 10, 3),
@@ -14,7 +16,6 @@ public enum Difficulty {
     public final int maxLives;
     public final int questionOrSurpriseCost;
 
-    
     Difficulty(int rows, int cols,
                int mines, int questionCells, int surpriseCells,
                int startLives, int maxLives, int questionOrSurpriseCost) {
@@ -27,4 +28,12 @@ public enum Difficulty {
         this.maxLives = maxLives;
         this.questionOrSurpriseCost = questionOrSurpriseCost;
     }
+
+    
+    @Override
+    public String toString() {
+        // אם יש לך בקבצים: difficulty.easy / difficulty.medium / difficulty.hard (עם (9x9) וכו')
+        return SysData.getI18n().t("difficulty." + name().toLowerCase());
+    }
+
 }
