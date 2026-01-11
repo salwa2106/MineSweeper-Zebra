@@ -61,12 +61,11 @@ public class MineSweeperPrototype extends JFrame {
 
 
 
-    private final JComboBox<String> cbDifficulty =
-            new JComboBox<>(new String[]{
-                    safeT("difficulty.easy","Easy (9x9)"),
-                    safeT("difficulty.medium","Medium (13x13)"),
-                    safeT("difficulty.hard","Hard (16x16)")
-            });
+   
+    		private final JComboBox<Difficulty> cbDifficulty =
+            new JComboBox<>(Difficulty.values());
+
+            
 
     public static String fixPath(String rel) {
         try {
@@ -349,17 +348,11 @@ public class MineSweeperPrototype extends JFrame {
         page.add(card, BorderLayout.CENTER);
         return wrapWithSlideFade(page);
     }
+    
     private void syncDifficultyComboFromSettings() {
-        Difficulty d = settingsController.getDefaultDifficulty();
-
-        int idx = switch (d) {
-            case EASY -> 0;
-            case MEDIUM -> 1;
-            case HARD -> 2;
-        };
-
-        cbDifficulty.setSelectedIndex(idx);
+        cbDifficulty.setSelectedItem(settingsController.getDefaultDifficulty());
     }
+
 
     private JPanel buildQuestionSettingsScreen() {
         JPanel page = new JPanel(new BorderLayout());
@@ -975,13 +968,14 @@ public class MineSweeperPrototype extends JFrame {
         }
 
         // This difficulty is ONLY for the current game (chosen in safeT("menu.newGame", "New Game") screen)
-        difficultyIdx = cbDifficulty.getSelectedIndex();
-        currentDifficulty = switch (difficultyIdx) {
-            case 0 -> Difficulty.EASY;
-            case 1 -> Difficulty.MEDIUM;
-            case 2 -> Difficulty.HARD;
-            default -> Difficulty.EASY;
+        currentDifficulty = (Difficulty) cbDifficulty.getSelectedItem();
+
+        difficultyIdx = switch (currentDifficulty) {
+            case EASY -> 0;
+            case MEDIUM -> 1;
+            case HARD -> 2;
         };
+       
 
         // ❌ IMPORTANT:
         // Do NOT save this as "default difficulty", otherwise it overrides SettingsFrame choice.

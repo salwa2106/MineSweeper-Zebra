@@ -14,13 +14,25 @@ public class SysData {
     private static final String USERS_CSV_FILE = getUsersCSVPath();
 
     // -------------------- I18N (LANGUAGE) --------------------
-    private static final l18n i18n = new l18n(Language.EN);
+    private static Language language = Language.EN;
+    private static l18n i18n = new l18n(language);
     private static float musicVolume = 0.7f; // 70% default (0.0–1.0)
 
     public static float getMusicVolume() {
         return musicVolume;
+
+    }
+    public static Language getLanguage() {
+        return language;
     }
 
+    public static void setLanguage(Language lang) {
+        if (lang == null) lang = Language.EN;
+        language = lang;
+
+        // הכי בטוח: ליצור i18n חדש לפי השפה
+        i18n = new l18n(language);
+    }
     public static void setMusicVolume(float v) {
         musicVolume = Math.max(0f, Math.min(1f, v));
     }
@@ -54,10 +66,6 @@ public class SysData {
         }
     }
 
-    public static void setLanguage(Language lang) {
-        if (lang == null) lang = Language.EN;
-        i18n.setLanguage(lang);
-    }
 
     // -------------------- THEME & MUSIC --------------------
 

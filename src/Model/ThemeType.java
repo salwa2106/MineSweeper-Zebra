@@ -82,4 +82,8 @@ public enum ThemeType {
     ThemeType(ThemeAssets assets) {
         this.assets = assets;
     }
+    @Override
+    public String toString() {
+        return SysData.getI18n().t("theme." + name().toLowerCase());
+    }
 }
