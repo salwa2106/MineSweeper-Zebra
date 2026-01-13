@@ -1989,7 +1989,7 @@ public class MineSweeperPrototype extends JFrame {
         // ------------------------------------
         // CHECK WIN CONDITION
         // ------------------------------------
-        if (areBothBoardsCleared()) {
+        if (isAnyBoardCleared()) {
 
             SoundManager.play(SoundManager.Sfx.WIN); // 🔊 WIN SOUND
 
@@ -1997,7 +1997,7 @@ public class MineSweeperPrototype extends JFrame {
             String p2 = tfP2.getText().trim();
 
             endGame(
-                safeT("dlg.boardCleared", "All boards cleared"),
+                safeT("dlg.boardCleared", "One board cleared! Team victory!"),
                 p1 + " & " + p2
             );
 
@@ -2011,10 +2011,11 @@ public class MineSweeperPrototype extends JFrame {
 
 
 
-    private boolean areBothBoardsCleared() {
+    private boolean isAnyBoardCleared() {
         return boards[0].isAllSafeCellsRevealed()
-            && boards[1].isAllSafeCellsRevealed();
+            || boards[1].isAllSafeCellsRevealed();
     }
+
 
     private void updateButtonForCell(int ownerIdx, Cell cell) {
         TileButton btn = buttons[ownerIdx][cell.getRow()][cell.getCol()];
