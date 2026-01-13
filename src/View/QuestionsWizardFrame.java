@@ -32,7 +32,8 @@ public class QuestionsWizardFrame extends JFrame {
     private QuestionsTableModel tableModel;
 
     public QuestionsWizardFrame(QuestionsController controller, Runnable onBack) {
-        super("Questions Wizard");
+        super(SysData.getI18n().t("questions.wizard.title"));
+
         this.controller = controller;
         this.onBack = onBack;
 
@@ -71,7 +72,7 @@ public class QuestionsWizardFrame extends JFrame {
         glass.setMaximumSize(cardSize);
 
         // ===== TITLE =====
-        JLabel title = new JLabel("QUESTIONS WIZARD", SwingConstants.CENTER);
+        JLabel title = new JLabel(SysData.getI18n().t("questions.wizard.header"), SwingConstants.CENTER);
         title.setFont(new Font("Georgia", Font.BOLD, 28));
         title.setForeground(new Color(210, 255, 235));
         glass.add(title, BorderLayout.NORTH);
@@ -88,11 +89,11 @@ public class QuestionsWizardFrame extends JFrame {
         row2.setOpaque(false);
 
         // ✅ Theme-aware buttons
-        JButton importBtn = new PillButton("Import CSV", pal.primary);
-        JButton exportBtn = new PillButton("Export CSV", pal.primary);
-        JButton addBtn    = new PillButton("Add", pal.secondary);
-        JButton editBtn   = new PillButton("Edit", pal.secondary);
-        JButton deleteBtn = new PillButton("Delete", pal.danger);
+        JButton importBtn = new PillButton(SysData.getI18n().t("btn.importCsv"), pal.primary);
+        JButton exportBtn = new PillButton(SysData.getI18n().t("btn.exportCsv"), pal.primary);
+        JButton addBtn    = new PillButton(SysData.getI18n().t("btn.add"), pal.secondary);
+        JButton editBtn   = new PillButton(SysData.getI18n().t("btn.edit"), pal.secondary);
+        JButton deleteBtn = new PillButton(SysData.getI18n().t("btn.delete"), pal.danger);
 
         row1.add(importBtn);
         row1.add(exportBtn);
@@ -126,7 +127,8 @@ public class QuestionsWizardFrame extends JFrame {
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 8));
         bottom.setOpaque(false);
 
-        JButton backBtn = new PillButton("Back", pal.secondary);
+        JButton backBtn = new PillButton(SysData.getI18n().t("btn.back"), pal.secondary);
+
         backBtn.setPreferredSize(new Dimension(260, 52));
         bottom.add(backBtn);
 
@@ -195,10 +197,14 @@ public class QuestionsWizardFrame extends JFrame {
         try {
             controller.importFromCsv(f);
             reloadFromModel();
-            JOptionPane.showMessageDialog(this, "Imported successfully.");
+            JOptionPane.showMessageDialog(this, SysData.getI18n().t("msg.import.ok"));
+
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Import failed:\n" + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        	JOptionPane.showMessageDialog(this,
+        	        SysData.getI18n().t("msg.import.fail") + "\n" + ex.getMessage(),
+        	        SysData.getI18n().t("dlg.error"),
+        	        JOptionPane.ERROR_MESSAGE);
+
         }
     }
 
@@ -214,10 +220,14 @@ public class QuestionsWizardFrame extends JFrame {
 
         try {
             controller.exportToCsv(f);
-            JOptionPane.showMessageDialog(this, "Exported successfully.");
+            JOptionPane.showMessageDialog(this, SysData.getI18n().t("msg.export.ok"));
+
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Export failed:\n" + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        	JOptionPane.showMessageDialog(this,
+        	        SysData.getI18n().t("msg.export.fail") + "\n" + ex.getMessage(),
+        	        SysData.getI18n().t("dlg.error"),
+        	        JOptionPane.ERROR_MESSAGE);
+
         }
     }
 
@@ -229,15 +239,19 @@ public class QuestionsWizardFrame extends JFrame {
             controller.addQuestion(created);
             reloadFromModel();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Add failed:\n" + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        	JOptionPane.showMessageDialog(this,
+        	        SysData.getI18n().t("msg.add.fail") + "\n" + ex.getMessage(),
+        	        SysData.getI18n().t("dlg.error"),
+        	        JOptionPane.ERROR_MESSAGE);
+
         }
     }
 
     private void onEdit() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Select a row to edit.");
+        	JOptionPane.showMessageDialog(this, SysData.getI18n().t("msg.select.edit"));
+
             return;
         }
 
@@ -249,21 +263,27 @@ public class QuestionsWizardFrame extends JFrame {
             controller.updateQuestionAtIndex(r, edited);
             reloadFromModel();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Edit failed:\n" + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        	JOptionPane.showMessageDialog(this,
+        	        SysData.getI18n().t("msg.edit.fail") + "\n" + ex.getMessage(),
+        	        SysData.getI18n().t("dlg.error"),
+        	        JOptionPane.ERROR_MESSAGE);
+
         }
     }
 
     private void onDelete() {
         int r = table.getSelectedRow();
         if (r < 0) {
-            JOptionPane.showMessageDialog(this, "Select a row to delete.");
+        	JOptionPane.showMessageDialog(this, SysData.getI18n().t("msg.select.delete"));
+
             return;
         }
 
         int ok = JOptionPane.showConfirmDialog(this,
-                "Delete selected question?",
-                "Confirm", JOptionPane.YES_NO_OPTION);
+                SysData.getI18n().t("msg.confirm.delete"),
+                SysData.getI18n().t("dlg.confirm"),
+                JOptionPane.YES_NO_OPTION);
+
 
         if (ok != JOptionPane.YES_OPTION) return;
 
@@ -271,8 +291,11 @@ public class QuestionsWizardFrame extends JFrame {
             controller.deleteQuestionAtIndex(r);
             reloadFromModel();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Delete failed:\n" + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        	JOptionPane.showMessageDialog(this,
+        	        SysData.getI18n().t("msg.delete.fail") + "\n" + ex.getMessage(),
+        	        SysData.getI18n().t("dlg.error"),
+        	        JOptionPane.ERROR_MESSAGE);
+
         }
     }
 
@@ -290,21 +313,31 @@ public class QuestionsWizardFrame extends JFrame {
         header.setDefaultRenderer((tbl, value, isSelected, hasFocus, row, col) -> {
             JLabel l = new JLabel(value == null ? "" : value.toString());
             l.setOpaque(true);
-            l.setFont(new Font("Georgia", Font.BOLD, 15));
+
+            boolean he = (SysData.getI18n() != null && SysData.getI18n().isHebrew());
+            l.setFont(new Font(he ? "SansSerif" : "Georgia", Font.BOLD, 15));
+
             l.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
             l.setBackground(pal.secondary.darker());
             l.setForeground(new Color(245, 255, 250));
             return l;
         });
+
         header.setPreferredSize(new Dimension(header.getPreferredSize().width, 38));
     }
 
     // ====== TABLE MODEL (Model.Question) ======
     private static class QuestionsTableModel extends AbstractTableModel {
-        private final String[] cols = {
-                "Question", "Difficulty", "A", "B", "C", "D",
-                "Correct", "Right+", "Wrong-", "LifeΔ"
-        };
+    	private final String[] cols = {
+    		    SysData.getI18n().t("col.question"),
+    		    SysData.getI18n().t("col.difficulty"),
+    		    "A", "B", "C", "D",
+    		    SysData.getI18n().t("col.correct"),
+    		    SysData.getI18n().t("col.right"),
+    		    SysData.getI18n().t("col.wrong"),
+    		    SysData.getI18n().t("col.life")
+    		};
+
         private List<Question> rows = new ArrayList<>();
 
         public void setRows(List<Question> rows) {
@@ -399,7 +432,8 @@ public class QuestionsWizardFrame extends JFrame {
         }
 
         QuestionDialog(Window owner, Question existing) {
-            super(owner, "Question", ModalityType.APPLICATION_MODAL);
+        	super(owner, SysData.getI18n().t("question.dialog.title"), ModalityType.APPLICATION_MODAL);
+
             setSize(720, 520);
             setLocationRelativeTo(owner);
 
@@ -410,19 +444,21 @@ public class QuestionsWizardFrame extends JFrame {
             gc.fill = GridBagConstraints.HORIZONTAL;
 
             int y = 0;
-            addRow(p, gc, y++, "Question:", tfQuestion);
-            addRow(p, gc, y++, "Difficulty:", cbDiff);
-            addRow(p, gc, y++, "A:", tfA);
-            addRow(p, gc, y++, "B:", tfB);
-            addRow(p, gc, y++, "C:", tfC);
-            addRow(p, gc, y++, "D:", tfD);
-            addRow(p, gc, y++, "Correct:", cbCorrect);
-            addRow(p, gc, y++, "Points Right:", spRight);
-            addRow(p, gc, y++, "Points Wrong:", spWrong);
-            addRow(p, gc, y++, "Life Delta:", spLife);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.question"), tfQuestion);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.difficulty"), cbDiff);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.a"), tfA);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.b"), tfB);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.c"), tfC);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.d"), tfD);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.correct"), cbCorrect);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.pointsRight"), spRight);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.pointsWrong"), spWrong);
+            addRow(p, gc, y++, SysData.getI18n().t("qd.lifeDelta"), spLife);
 
-            JButton ok = new JButton("OK");
-            JButton cancel = new JButton("Cancel");
+
+            JButton ok = new JButton(SysData.getI18n().t("btn.ok"));
+            JButton cancel = new JButton(SysData.getI18n().t("btn.cancel"));
+
             JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             actions.add(ok);
             actions.add(cancel);
@@ -430,7 +466,8 @@ public class QuestionsWizardFrame extends JFrame {
             ok.addActionListener(e -> {
                 SoundManager.play(SoundManager.Sfx.CLICK);
                 if (tfQuestion.getText().trim().isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Question text is required.");
+                	JOptionPane.showMessageDialog(this, SysData.getI18n().t("qd.required"));
+
                     return;
                 }
                 Question q = new Question();

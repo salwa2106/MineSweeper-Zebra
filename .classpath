@@ -6,11 +6,11 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/janae/OneDrive/Documents/GitHub/MineSweeper-Zebra/src/lib/jl1.0.1.jar"/>
-	<classpathentry kind="lib" path="C:/Users/janae/OneDrive/Documents/GitHub/MineSweeper-Zebra/src/lib/junit-jupiter-api-5.10.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/janae/OneDrive/Documents/GitHub/MineSweeper-Zebra/src/lib/junit-jupiter-engine.source_5.10.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/janae/OneDrive/Documents/GitHub/MineSweeper-Zebra/src/lib/junit-platform-console-standalone-1.10.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/janae/OneDrive/Documents/GitHub/MineSweeper-Zebra/src/lib/mp3spi-1.9.5-1.jar"/>
-	<classpathentry kind="lib" path="C:/Users/janae/OneDrive/Documents/GitHub/MineSweeper-Zebra/src/lib/tritonus-share-0.3.7.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mahmo/git/ZebraRepo/MineSweeper-Zebra/src/lib/jl1.0.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mahmo/git/ZebraRepo/MineSweeper-Zebra/src/lib/junit-jupiter-api-5.10.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mahmo/git/ZebraRepo/MineSweeper-Zebra/src/lib/junit-jupiter-engine.source_5.10.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mahmo/git/ZebraRepo/MineSweeper-Zebra/src/lib/junit-platform-console-standalone-1.10.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mahmo/git/ZebraRepo/MineSweeper-Zebra/src/lib/mp3spi-1.9.5-1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/mahmo/git/ZebraRepo/MineSweeper-Zebra/src/lib/tritonus-share-0.3.7.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

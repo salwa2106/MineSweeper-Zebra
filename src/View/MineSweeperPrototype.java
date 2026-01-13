@@ -37,10 +37,6 @@ import java.util.Random;
  */
 public class MineSweeperPrototype extends JFrame {
 
-
-	
-
-
 	private ThemeAssets assets() {
 	    return SysData.getTheme().assets;
 	}
@@ -570,13 +566,12 @@ public class MineSweeperPrototype extends JFrame {
         glass.setLayout(new BoxLayout(glass, BoxLayout.Y_AXIS));
         glass.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
 
-        // Title
         JLabel title = new JLabel(safeT("app.minesweeper","MINESWEEPER"), SwingConstants.CENTER);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 48));
         title.setForeground(new Color(190, 255, 220));
 
-        JLabel subtitle = new JLabel(safeT("app.subtitle",safeT("app.subtitle", "+ Trivia")), SwingConstants.CENTER);
+        JLabel subtitle = new JLabel(safeT("app.subtitle","+ Trivia"), SwingConstants.CENTER);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
         subtitle.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.PLAIN, 22));
         subtitle.setForeground(new Color(170, 220, 200));
@@ -586,22 +581,23 @@ public class MineSweeperPrototype extends JFrame {
         glass.add(subtitle);
         glass.add(Box.createVerticalStrut(40));
 
-        // ✅ Create ALL 6 buttons
         ThemePalette pal = ThemePalette.of(SysData.getTheme());
 
-        JButton newGame = createFrostedButton(safeT("menu.newGame", "New Game"), pal);
+        JButton newGame  = createFrostedButton(safeT("menu.newGame", "New Game"), pal);
         resumeButton    = createFrostedButton(safeT("menu.resume", "Resume"), pal);
         JButton settings= createFrostedButton(safeT("menu.settings", "Settings"), pal);
         JButton history = createFrostedButton(safeT("menu.history", "History"), pal);
-        JButton exit    = createFrostedButton(safeT("btn.exit", safeT("menu.exit", "Exit")), pal);
+        JButton exit    = createFrostedButton(safeT("menu.exit", "Exit"), pal);
 
         JButton questionsBtn = null;
         if (SysData.isAdmin()) {
-            questionsBtn = createFrostedButton("Questions", pal);
+            questionsBtn = createFrostedButton( safeT("menu.questions", "Questions"), pal);
+            questionsBtn.addActionListener(e -> {
+                SoundManager.play(SoundManager.Sfx.CLICK);
+                openQuestionsWizard();
+            });
         }
 
-
-        // ✅ Button size
         Dimension btnSize = new Dimension(200, 55);
         Font btnFont = new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 20);
 
@@ -611,83 +607,85 @@ public class MineSweeperPrototype extends JFrame {
             b.setMinimumSize(btnSize);
             b.setFont(btnFont);
         }
+        if (questionsBtn != null) {
+            questionsBtn.setPreferredSize(btnSize);
+            questionsBtn.setMaximumSize(btnSize);
+            questionsBtn.setMinimumSize(btnSize);
+            questionsBtn.setFont(btnFont);
+        }
 
-        // ✅ Actions
-        newGame.addActionListener(e -> { 
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	currentScreen = SCREEN_NEW_GAME; cards.show(root, SCREEN_NEW_GAME); });
+        newGame.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            currentScreen = SCREEN_NEW_GAME;
+            cards.show(root, SCREEN_NEW_GAME);
+        });
+
         updateResumeButtonState();
-        resumeButton.addActionListener(e -> { 
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	currentScreen = SCREEN_GAME; cards.show(root, SCREEN_GAME); });
+        resumeButton.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            currentScreen = SCREEN_GAME;
+            cards.show(root, SCREEN_GAME);
+        });
 
-        // ✅ Settings opens popup window
         settings.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	SettingsFrame frame = new SettingsFrame(settingsController, () -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            SettingsFrame frame = new SettingsFrame(settingsController, () -> {
+                cbDifficulty.setSelectedIndex(switch (settingsController.getDefaultDifficulty()) {
+                    case EASY -> 0;
+                    case MEDIUM -> 1;
+                    case HARD -> 2;
+                });
 
-        	    cbDifficulty.setSelectedIndex(switch (settingsController.getDefaultDifficulty()) {
-        	        case EASY -> 0;
-        	        case MEDIUM -> 1;
-        	        case HARD -> 2;
-        	    });
+                int limit = getMaxLivesLimit();
+                if (sharedLives > limit) sharedLives = limit;
 
-        	    int limit = getMaxLivesLimit();
-        	    if (sharedLives > limit) sharedLives = limit;
-
-        	    updateSharedHearts();
-        	    syncDifficultyComboFromSettings();
-        	    refreshLocalization();
-
-        	    // ✅ THIS WAS MISSING
-        	    applyThemeFromSettings();
-        	});
-
+                updateSharedHearts();
+                syncDifficultyComboFromSettings();
+                refreshLocalization();
+                applyThemeFromSettings();
+            });
             frame.setVisible(true);
-
         });
 
         history.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	showHistory();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            showHistory();
+        });
 
         exit.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
+            SoundManager.play(SoundManager.Sfx.CLICK);
             int r = JOptionPane.showConfirmDialog(
                     this,
-                    safeT("msg.returnToLogin",safeT("msg.returnToLogin", "Return to login screen?")),
-                    safeT("dlg.confirm",safeT("dlg.confirm", "Confirm")),
+                    safeT("msg.returnToLogin", "Return to login screen?"),
+                    safeT("dlg.confirm", "Confirm"),
                     JOptionPane.YES_NO_OPTION
             );
 
             if (r == JOptionPane.YES_OPTION) {
-                dispose();          // close MineSweeperPrototype
-                new LoginFrame();   // go back to login
+                dispose();
+                new LoginFrame();
             }
         });
 
-        // ✅ 2-COLUMN GRID for all 6 buttons (3 rows × 2 columns)
         JPanel buttonGrid = new JPanel(new GridLayout(3, 2, 15, 15));
         buttonGrid.setOpaque(false);
         buttonGrid.setMaximumSize(new Dimension(430, 200));
         buttonGrid.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         if (SysData.isAdmin()) {
-            // ✅ ADMIN: 6 buttons fill 3x2
             buttonGrid.add(newGame);
             buttonGrid.add(resumeButton);
             buttonGrid.add(settings);
-            buttonGrid.add(questionsBtn);   // admin-only
+            buttonGrid.add(questionsBtn);
             buttonGrid.add(history);
             buttonGrid.add(exit);
         } else {
-            // ✅ USER: only 5 buttons + filler for the 6th slot
             buttonGrid.add(newGame);
             buttonGrid.add(resumeButton);
             buttonGrid.add(settings);
             buttonGrid.add(history);
             buttonGrid.add(exit);
-            buttonGrid.add(Box.createGlue()); // filler
+            buttonGrid.add(Box.createGlue());
         }
 
         glass.add(buttonGrid);
@@ -703,19 +701,25 @@ public class MineSweeperPrototype extends JFrame {
         return wrapWithSlideFade(page);
     }
 
+
     private void openQuestionsWizard() {
         if (!SysData.isAdmin()) {
-            JOptionPane.showMessageDialog(this, safeT("msg.adminOnly",safeT("msg.adminOnly", "Admin only.")));
+        	  JOptionPane.showMessageDialog(
+                    this,
+                    safeT("msg.adminOnly", "Admin only."),
+                    safeT("dlg.warning", "Warning"),
+                    JOptionPane.WARNING_MESSAGE
+            );
             return;
         }
 
         QuestionsWizardFrame.QuestionsController adapter =
                 new QuestionsWizardFrame.QuestionsController() {
+
                     @Override
-                    public java.util.List<Model.Question> getAllQuestions() {
+                    public java.util.List<Question> getAllQuestions() {
                         return questionsController.getAllQuestions();
                     }
-
 
                     @Override
                     public void importFromCsv(java.io.File file) throws Exception {
@@ -728,12 +732,12 @@ public class MineSweeperPrototype extends JFrame {
                     }
 
                     @Override
-                    public void addQuestion(Model.Question q) throws Exception {
+                    public void addQuestion(Question q) throws Exception {
                         questionsController.addQuestion(q);
                     }
 
                     @Override
-                    public void updateQuestionAtIndex(int index, Model.Question q) throws Exception {
+                    public void updateQuestionAtIndex(int index, Question q) throws Exception {
                         questionsController.updateQuestionAtIndex(index, q);
                     }
 
@@ -744,10 +748,12 @@ public class MineSweeperPrototype extends JFrame {
                 };
 
         QuestionsWizardFrame wizard = new QuestionsWizardFrame(adapter, () -> {
-            // back
+            // back callback (optional)
         });
+
         wizard.setVisible(true);
     }
+
 
 
 
@@ -1656,14 +1662,19 @@ public class MineSweeperPrototype extends JFrame {
     private void showHelp() {
         currentScreen = SCREEN_MENU; // help is a dialog/popup
 
-        JOptionPane.showMessageDialog(this,
-                safeT("help.controlsHeader","Controls:\n") +
-                        "• Left-click: Reveal cell\n" +
-                        "• Right-click: Toggle flag\n" +
-                        "• Numbers show adjacent mines\n" +
-                        "• Trivia answers can gain/lose lives\n" +
-                        "• Shared lives (max 10); overflow converts to points\n",
-                "How to Play", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(
+                this,
+                safeT("help.text",
+                    "Left-click: Reveal cell\n" +
+                    "Right-click: Toggle flag\n" +
+                    "Numbers show adjacent mines\n" +
+                    "Trivia answers can gain/lose lives\n" +
+                    "Shared lives (max 10): overflow converts to points"
+                ),
+                safeT("help.title", "How to Play"),
+                JOptionPane.INFORMATION_MESSAGE
+            );
+
     }
     private void shakeWindow() {
         final Point original = getLocation();
@@ -1733,20 +1744,22 @@ public class MineSweeperPrototype extends JFrame {
 
                     // ❌ POINT PENALTY FOR STEPPING ON A MINE
                     bumpScore(-3);
-
+                    shakeWindow();
                     JOptionPane.showMessageDialog(
-                            this,
-                            "BOOM! Mine hit!\n(-3 points)",
-                            "Mine",
-                            JOptionPane.WARNING_MESSAGE
-                    );
+                    	    this,
+                    	    safeT("dlg.mine.hit",
+                    	          "BOOM! Mine hit!\n(-3 points and -1 life)"),
+                    	    safeT("dlg.mine.title", "Mine"),
+                    	    JOptionPane.WARNING_MESSAGE
+                    	);
+
 
                     loseSharedLives(1);
                     if (sharedLives == 0) return;
                     usedTurn = true;
 
 
-                    shakeWindow();
+                    
                 }
             }
 
