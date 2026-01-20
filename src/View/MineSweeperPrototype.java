@@ -2963,70 +2963,100 @@ public class MineSweeperPrototype extends JFrame {
 	}
 
 
- // ✅ one place to finish a game properly
- private void endGame(String resultText, String winnerNameOrNull) {
-	    if (gameEnded) return;
-	    gameEnded = true;
-	    gameInProgress = false;
+//✅ one place to finish a game properly
+private void endGame(String resultText, String winnerNameOrNull) {
 
-	    // 1) convert lives -> points (keep bonus for message)
-	    int bonusFromHearts = convertRemainingLivesToPoints();
+  // ✅ prevent double-trigger
+  if (gameEnded) return;
 
-	    // 2) reveal boards
-	    revealAllBoards();
+  gameEnded = true;
+  gameInProgress = false;
 
-	    // 3) history
-	    String p1 = tfP1.getText().trim();
-	    String p2 = tfP2.getText().trim();
-	    String who = (winnerNameOrNull != null) ? winnerNameOrNull : (p1 + " & " + p2);
+  // ✅ lock UI immediately (no more clicks/flags while dialog is open)
+  for (int p = 0; p < 2; p++) {
+      if (buttons[p] == null) continue;
+      for (int r = 0; r < buttons[p].length; r++) {
+          if (buttons[p][r] == null) continue;
+          for (int c = 0; c < buttons[p][r].length; c++) {
+              if (buttons[p][r][c] != null) buttons[p][r][c].setEnabled(false);
+          }
+      }
+  }
 
-	    gameHistory.add(new String[] {
-	            who,
-	            resultText,
-	            String.valueOf(sharedPoints),
-	            currentDifficulty.name(),
-	            String.valueOf(java.time.LocalDateTime.now())
-	    });
+  // 1) convert lives -> points (keep bonus for message)
+  int bonusFromHearts = convertRemainingLivesToPoints();
 
-	    if (settingsController.isAutoSaveHistory()) exportHistoryToCSV();
+  // 2) reveal boards visually (after disabling)
+  revealAllBoards();
 
-	    // 4) message (clear & consistent)
-	    boolean isWin = (winnerNameOrNull != null);
+  // 3) history
+  String p1 = tfP1.getText().trim();
+  String p2 = tfP2.getText().trim();
+  String who = (winnerNameOrNull != null) ? winnerNameOrNull : (p1 + " & " + p2);
 
-	    String title = safeT("dlg.gameEnded", "Game Ended");
-	    String header = isWin
-	            ? safeT("dlg.winTitle", "🎉 Winner!") + " " + winnerNameOrNull
-	            : safeT("dlg.loseTitle", "💀 Game Over");
+  gameHistory.add(new String[] {
+          who,
+          resultText,
+          String.valueOf(sharedPoints),
+          currentDifficulty.name(),
+          String.valueOf(java.time.LocalDateTime.now())
+  });
 
-	    String reasonLine = safeT("dlg.reasonPrefix", "Result: ") + resultText;
-	    String scoreLine  = safeT("msg.finalScorePrefix", "Final Score: ") + sharedPoints;
+  if (settingsController.isAutoSaveHistory()) exportHistoryToCSV();
 
-	    String bonusLine = (bonusFromHearts > 0)
-	            ? safeT("msg.bonusFromHeartsPrefix", "Bonus from remaining hearts: +") + bonusFromHearts
-	            : safeT("msg.bonusFromHeartsNone", "Bonus from remaining hearts: +0");
+  // 4) message
+  boolean isWin = (winnerNameOrNull != null);
 
-	    String askLine = safeT("msg.startNewGameQ", "Start a new game?");
+  String title = safeT("dlg.gameEnded", "Game Ended");
+  String header = isWin
+          ? safeT("dlg.winTitle", "🎉 Winner!") + " " + winnerNameOrNull
+          : safeT("dlg.loseTitle", "💀 Game Over");
 
-	    String message =
-	            header + "\n\n" +
-	            reasonLine + "\n" +
-	            bonusLine + "\n" +
-	            scoreLine + "\n\n" +
-	            askLine;
+  String reasonLine = safeT("dlg.reasonPrefix", "Result: ") + resultText;
+  String scoreLine  = safeT("msg.finalScorePrefix", "Final Score: ") + sharedPoints;
 
-	    int choice = JOptionPane.showConfirmDialog(
-	            this,
-	            message,
-	            title,
-	            JOptionPane.YES_NO_OPTION,
-	            JOptionPane.INFORMATION_MESSAGE
-	    );
+  String bonusLine = (bonusFromHearts > 0)
+          ? safeT("msg.bonusFromHeartsPrefix", "Bonus from remaining hearts: +") + bonusFromHearts
+          : safeT("msg.bonusFromHeartsNone", "Bonus from remaining hearts: +0");
 
-	    if (choice == JOptionPane.YES_OPTION) {
-	        gameEnded = false;
-	        startGame();
-	    }
-	}
+  String askLine = safeT("msg.startNewGameQ", "Start a new game?");
+
+  String message =
+          header + "\n\n" +
+          reasonLine + "\n" +
+          bonusLine + "\n" +
+          scoreLine + "\n\n" +
+          askLine;
+
+  int choice = JOptionPane.showConfirmDialog(
+          this,
+          message,
+          title,
+          JOptionPane.YES_NO_OPTION,
+          JOptionPane.INFORMATION_MESSAGE
+  );
+
+  if (choice == JOptionPane.YES_OPTION) {
+      // ✅ reset end state + start new game
+      gameEnded = false;
+
+      // re-enable buttons (startGame rebuilds UI anyway, but keep safe)
+      for (int p = 0; p < 2; p++) {
+          if (buttons[p] == null) continue;
+          for (int r = 0; r < buttons[p].length; r++) {
+              if (buttons[p][r] == null) continue;
+              for (int c = 0; c < buttons[p][r].length; c++) {
+                  if (buttons[p][r][c] != null) buttons[p][r][c].setEnabled(true);
+              }
+          }
+      }
+
+      startGame();
+  }
+
+  // If NO: stay ended (buttons remain disabled)
+}
+
 
 
 
