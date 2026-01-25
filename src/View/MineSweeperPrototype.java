@@ -62,11 +62,15 @@ public class MineSweeperPrototype extends JFrame {
 	private int hintsLeft = MAX_HINTS;
 	private JLabel hintLabel;
 
+	private ThemeType themeAtGameStart = null;
 
 	private BackgroundPanel backgroundPanel;
+	private ThemeType themeForGame = null;
 
 
-
+	private ThemeType effectiveTheme() {
+	    return (gameInProgress && themeForGame != null) ? themeForGame : SysData.getTheme();
+	}
    
     		private final JComboBox<Difficulty> cbDifficulty =
             new JComboBox<>(Difficulty.values());
@@ -277,6 +281,10 @@ public class MineSweeperPrototype extends JFrame {
         SwingUtilities.updateComponentTreeUI(this);
         revalidate();
         repaint();
+        if (gameInProgress) {
+            syncBoardUIFromModel();
+        }
+
         
 
     }
@@ -744,9 +752,31 @@ public class MineSweeperPrototype extends JFrame {
         updateResumeButtonState();
         resumeButton.addActionListener(e -> {
             SoundManager.play(SoundManager.Sfx.CLICK);
+
+            if (gameInProgress && themeAtGameStart != null && SysData.getTheme() != themeAtGameStart) {
+
+                ThemeType now = SysData.getTheme();
+                ThemeType gameTheme = themeAtGameStart;
+
+                
+
+                // ✅ Only override theme for the game screen
+                themeForGame = gameTheme;
+
+                // rebuild game visuals using effectiveTheme()
+                applyThemeFromSettings();
+                syncBoardUIFromModel();
+
+            } else if (gameInProgress) {
+                themeForGame = themeAtGameStart; // keep it safe
+                syncBoardUIFromModel();
+            }
+
             currentScreen = SCREEN_GAME;
             cards.show(root, SCREEN_GAME);
         });
+
+
 
         settings.addActionListener(e -> {
             SoundManager.play(SoundManager.Sfx.CLICK);
@@ -1076,6 +1106,72 @@ public class MineSweeperPrototype extends JFrame {
         return row;
     }
 
+    private String themeName(ThemeType t) {
+        if (t == null) return "Unknown";
+        String n = t.name().toLowerCase();
+        if (n.contains("beach")) return "Beach";
+        if (n.contains("space")) return "Space";
+        if (n.contains("forest")) return "Forest";
+        if (n.contains("ice")) return "Ice";
+        if (n.contains("mount")) return "Mountain";
+        if (n.contains("christ")) return "Christmas";
+        return t.name();
+    }
+
+    private void syncBoardUIFromModel() {
+
+        if (buttons == null || boards == null) return;
+
+        for (int owner = 0; owner < 2; owner++) {
+
+            Board b = boards[owner];
+            if (b == null) continue;
+
+            for (int r = 0; r < b.getRows(); r++) {
+                for (int c = 0; c < b.getCols(); c++) {
+
+                    Cell cell = b.getCell(r, c);
+                    TileButton btn = buttons[owner][r][c];
+                    if (btn == null) continue;
+
+                    // clear visuals
+                    btn.setText("");
+                    btn.setOverlayIcon(null);
+
+                    // revealed -> paint the real state
+                    if (cell.isRevealed()) {
+                        updateButtonForCell(owner, cell);
+                    } else {
+                        // hidden -> show flag if flagged
+                        btn.setRevealedVisual(false);
+
+                        if (cell.isFlagged()) {
+                            int W = btn.getPreferredSize().width;
+                            int H = btn.getPreferredSize().height;
+                            btn.setOverlayIcon(loadIconFit(A_FLAG(), W / 2, H / 2));
+                        }
+                    }
+                }
+            }
+        }
+
+        // refresh top UI too
+        updateSharedHearts();
+        updateSharedScoreLabel();
+        refreshRightStats();
+
+        // restore dim/glow based on whose turn it is
+        int active = p1Turn ? 0 : 1;
+        int inactive = p1Turn ? 1 : 0;
+
+        if (glowPanels[active] != null) glowPanels[active].setActive(true);
+        if (glowPanels[inactive] != null) glowPanels[inactive].setActive(false);
+
+        if (dimPanels[active] != null) dimPanels[active].setDim(1f);
+        if (dimPanels[inactive] != null) dimPanels[inactive].setDim(0.45f);
+
+        repaint();
+    }
 
 
     private void styleField(JTextField tf) {
@@ -1094,6 +1190,8 @@ public class MineSweeperPrototype extends JFrame {
     private void startGame() {
         String p1 = tfP1.getText().trim();
         String p2 = tfP2.getText().trim();
+        themeAtGameStart = SysData.getTheme();
+        themeForGame = themeAtGameStart;
 
         if (p1.isEmpty() || p2.isEmpty()) {
             JOptionPane.showMessageDialog(this,
@@ -1125,6 +1223,8 @@ public class MineSweeperPrototype extends JFrame {
         flagsCount[0] = flagsCount[1] = 0;
         revealedCount[0] = revealedCount[1] = 0;
         gameInProgress = true;
+        themeAtGameStart = SysData.getTheme();
+
 
         // ✅ reset hint system BEFORE rebuilding the game UI
         clearHint();
@@ -1355,7 +1455,8 @@ public class MineSweeperPrototype extends JFrame {
      // 🔄 Restart icon + 💡 Hint (above boards)
         JButton restartBtn = createRestartIconButton();
 
-        ThemePalette pal = ThemePalette.of(SysData.getTheme());
+        ThemePalette pal = ThemePalette.of(effectiveTheme());
+
 
         JButton hintBtn = createFrostedButton(safeT("btn.hint", "Hint"), pal);
         hintBtn.setPreferredSize(new Dimension(140, 45));
@@ -1420,6 +1521,13 @@ public class MineSweeperPrototype extends JFrame {
 
         grid.setOpaque(false);
         grid.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+     // lock grid size so JScrollPane never thinks it needs scrollbars
+        int W = cols * TILE + (cols - 1) * gap + 12;
+        int H = rows * TILE + (rows - 1) * gap + 12;
+
+        grid.setPreferredSize(new Dimension(W, H));
+        grid.setMinimumSize(new Dimension(W, H));
+        grid.setMaximumSize(new Dimension(W, H));
 
         for (int r=0; r<rows; r++) {
             for (int c=0; c<cols; c++) {
@@ -1466,6 +1574,12 @@ public class MineSweeperPrototype extends JFrame {
         sp.setOpaque(false);
         sp.setBackground(new Color(0,0,0,0));
         sp.getViewport().setBackground(new Color(0,0,0,0));
+
+        // never allow scrollbars
+        sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        sp.setWheelScrollingEnabled(false);
+
 
         outer.add(sp, BorderLayout.CENTER);
 
