@@ -328,6 +328,106 @@ public class SysData {
     public static void addQuestion(Question q) {
         questions.add(q);
     }
+    
+ // ===================== QUESTIONS DEDUPLICATION =====================
+
+ // ===================== QUESTIONS DEDUPLICATION =====================
+
+    private static String normalize(String s) {
+        if (s == null) return "";
+        return s.trim().replaceAll("\\s+", " ").toLowerCase();
+    }
+
+    // duplicate question = same question text
+    private static String questionTextKey(Question q) {
+        return normalize(q.getText());
+    }
+
+    private static String answersKey(Question q) {
+        // normalize all answers, handle nulls, trim, lower, and collapse spaces
+        List<String> opts = new ArrayList<>();
+        opts.add(normalize(q.getOptA()));
+        opts.add(normalize(q.getOptB()));
+        opts.add(normalize(q.getOptC()));
+        opts.add(normalize(q.getOptD()));
+
+        // if you want to ignore empty answers, uncomment:
+        // opts.removeIf(String::isEmpty);
+
+        // sort so A/B/C/D order doesn't matter
+        Collections.sort(opts);
+
+        // join into one comparable key
+        return String.join("|", opts);
+    }
+
+   
+    public static void deduplicateQuestions() {
+        Set<String> seenQuestions = new HashSet<>();
+        Set<String> seenAnswers   = new HashSet<>();
+
+        List<Question> cleaned = new ArrayList<>();
+
+        for (Question q : questions) {
+            if (q == null) continue;
+
+            if (q.getDifficulty() == null || q.getDifficulty().isBlank())
+                q.setDifficulty("easy");
+
+            if (q.getText() == null || q.getText().trim().isEmpty())
+                continue;
+
+            String qKey = questionTextKey(q);
+            String aKey = answersKey(q);
+
+            // reject if question already exists OR answers already exist
+            if (seenQuestions.contains(qKey)) continue;
+            if (seenAnswers.contains(aKey)) continue;
+
+            seenQuestions.add(qKey);
+            seenAnswers.add(aKey);
+            cleaned.add(q);
+        }
+
+        questions.clear();
+        questions.addAll(cleaned);
+    }
+
+
+    /** Adds a question only if it doesn't already exist (same question + answers). */
+    /** 
+     * Adds question only if:
+     * - Question text is not already used
+     * - Answers A/B/C/D are not already used
+     */
+    public static boolean addQuestionNoDuplicate(Question q) {
+        if (q == null) return false;
+
+        if (q.getDifficulty() == null || q.getDifficulty().isBlank())
+            q.setDifficulty("easy");
+
+        if (q.getText() == null || q.getText().trim().isEmpty())
+            return false;
+
+        String newQKey = questionTextKey(q);
+        String newAKey = answersKey(q);
+
+        for (Question existing : questions) {
+            if (existing == null) continue;
+
+            if (questionTextKey(existing).equals(newQKey)) {
+                return false; // duplicate question
+            }
+            if (answersKey(existing).equals(newAKey)) {
+                return false; // duplicate answers
+            }
+        }
+
+        questions.add(q);
+        return true;
+    }
+
+
 
     /** Returns a random question from list, or null if empty. */
     public static Question nextRandom() {
@@ -432,8 +532,10 @@ public class SysData {
 
         } catch (IOException e) {
             e.printStackTrace();
+            
         }
-
+        
+        deduplicateQuestions();
         System.out.println("✔ Loaded " + questions.size() + " questions from CSV.");
     }
 
@@ -487,4 +589,12 @@ public class SysData {
     private static String nvl(Integer n) {
         return n == null ? "" : n.toString();
     }
+ // ===================== DEDUP HELPERS =====================
+    private static String norm(String s) {
+        return (s == null) ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase();
+    }
+
+   
+
+ 
 }

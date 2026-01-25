@@ -7,6 +7,7 @@ import View.QuestionsWizardFrame;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class QuestionsController implements QuestionsWizardFrame.QuestionsController {
@@ -18,12 +19,17 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
 
     @Override
     public void addQuestion(Question q) {
-        SysData.addQuestion(q);
-        SysData.saveToCsv(); // ✅ persist immediately
-        System.out.println("🔥 ADD called");
-
+        boolean added = SysData.addQuestionNoDuplicate(q);
+        if (added) {
+            SysData.saveToCsv();
+            System.out.println("🔥 ADD called");
+        } else {
+            System.out.println("⚠ Duplicate question ignored");
+        }
     }
-
+    
+    
+   
     @Override
     public void updateQuestionAtIndex(int index, Question q) {
         List<Question> list = new ArrayList<>(SysData.getQuestions());
@@ -99,6 +105,7 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
 
         SysData.clear();
         for (Question q : loaded) SysData.addQuestion(q);
+        SysData.deduplicateQuestions();
         SysData.saveToCsv(); // ✅ import replaces and saves
     }
 
@@ -145,4 +152,5 @@ public class QuestionsController implements QuestionsWizardFrame.QuestionsContro
     }
     
     
+
 }
