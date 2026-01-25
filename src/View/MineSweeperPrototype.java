@@ -268,7 +268,7 @@ public class MineSweeperPrototype extends JFrame {
         }
         
         clearHint();
-        hintsLeft = MAX_HINTS;
+        
 
 
         // Rebuild game UI
