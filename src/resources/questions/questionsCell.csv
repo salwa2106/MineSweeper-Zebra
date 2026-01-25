@@ -7,10 +7,10 @@ What is a requirement?,A test case,A user need or constraint,A design pattern,A 
 Which testing level focuses on individual components?,System Testing,Acceptance Testing,Unit Testing,Integration Testing,C,3,-1,1,medium
 What is the purpose of a use case?,Describe database schema,Describe user-system interaction,Measure performance,Control versions,B,3,-1,1,medium
 Which model shows system behavior over time?,Class diagram,State diagram,Context diagram,ER diagram,B,3,-1,1,medium
-What is verification?,Are we building the right product?,Are we building the product right?,Is the UI usable?,,I,,3,-1,1
+What is verification?,Are we building the right product?,Are we building the product right?,Is the UI usable?,,A,0,3,-1,easy
 What does configuration management mainly control?,User permissions,Source code changes,System performance,Database queries,B,3,-1,1,medium
 Which activity is part of software evolution?,Writing initial requirements,Adding new features after release,Creating UML diagrams only,Stopping system usage,B,3,-1,1,hard
-According to Lehman’s laws, what happens if a system is not maintained?,It becomes more efficient,Its quality declines,It stops changing,I,,3,-1,1
+According to Lehman’s laws,what happens if a system is not maintained?,It becomes more efficient,Its quality declines,It stops changing,A,0,3,-1,easy
 Which testing is performed by end users?,Unit testing,System testing,User acceptance testing,Integration testing,C,3,-1,1,hard
 What is the main risk of poor documentation?,Faster development,Harder maintenance,Better testing,Higher quality,B,3,-1,1,hard
 Which standard focuses on software quality management?,ISO 9001,HTML,CSS,SQL,A,3,-1,1,hard

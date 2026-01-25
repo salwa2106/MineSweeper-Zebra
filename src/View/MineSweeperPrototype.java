@@ -52,6 +52,16 @@ public class MineSweeperPrototype extends JFrame {
 	private String A_HEART_FULL()  { return fixPath(assets().heartFull); }
 	private String A_HEART_EMPTY() { return fixPath(assets().heartEmpty); }
 	private String A_REFRESH()     { return fixPath(assets().refresh); }
+	// ===== HINT FEATURE =====
+	private javax.swing.Timer hintTimer;
+	private int hintedOwner = -1;
+	private int hintedRow = -1;
+	private int hintedCol = -1;
+
+	private static final int MAX_HINTS = 3;
+	private int hintsLeft = MAX_HINTS;
+	private JLabel hintLabel;
+
 
 	private BackgroundPanel backgroundPanel;
 
@@ -252,6 +262,10 @@ public class MineSweeperPrototype extends JFrame {
         } else {
             MusicManager.stop();   
         }
+        
+        clearHint();
+        hintsLeft = MAX_HINTS;
+
 
         // Rebuild game UI
         if (gamePanel != null) {
@@ -259,14 +273,121 @@ public class MineSweeperPrototype extends JFrame {
             gamePanel = buildGame(currentDifficulty.rows, currentDifficulty.cols);
             root.add(gamePanel, SCREEN_GAME);
         }
-
+        updateHintLabel();
         SwingUtilities.updateComponentTreeUI(this);
         revalidate();
         repaint();
+        
+
     }
 
 
-   
+    private void updateHintLabel() {
+        if (hintLabel != null) {
+            hintLabel.setText(safeT("hint.leftPrefix", "Hints: ") + hintsLeft + "/" + MAX_HINTS);
+        }
+    }
+
+    private void clearHint() {
+        if (hintedOwner >= 0 && hintedRow >= 0 && hintedCol >= 0) {
+            try {
+                TileButton b = buttons[hintedOwner][hintedRow][hintedCol];
+                if (b != null) {
+                    b.setHint(false);
+                }
+            } catch (Exception ignore) {}
+        }
+
+        hintedOwner = -1;
+        hintedRow = -1;
+        hintedCol = -1;
+
+        if (hintTimer != null) {
+            hintTimer.stop();
+            hintTimer = null;
+        }
+    }
+    private void useHint() {
+
+        if (!gameInProgress || buttons == null) return;
+
+        if (hintsLeft <= 0) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    safeT("hint.noMore", "No hints left (max 3 per game)."),
+                    safeT("hint.title", "Hint"),
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        int cost = getQuestionActivationCost();
+
+        if (sharedPoints < cost) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    safeT("hint.notEnough",
+                            "Not enough points for a hint.\nRequired: " + cost + " points."),
+                    safeT("hint.title", "Hint"),
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        int currentPlayer = p1Turn ? 0 : 1;
+        Board board = boards[currentPlayer];
+        if (board == null) return;
+
+        java.util.List<Cell> candidates = new java.util.ArrayList<>();
+
+        for (int r = 0; r < board.getRows(); r++) {
+            for (int c = 0; c < board.getCols(); c++) {
+                Cell cell = board.getCell(r, c);
+
+                if (cell.getType() != CellType.MINE && !cell.isRevealed() && !cell.isFlagged()) {
+                    candidates.add(cell);
+                }
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    safeT("hint.none", "No safe cells available for a hint right now."),
+                    safeT("hint.title", "Hint"),
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        // pay cost
+        bumpScore(-cost);
+
+        // clear previous hint
+        clearHint();
+
+        // pick random safe cell
+        Cell chosen = candidates.get(rng.nextInt(candidates.size()));
+
+        hintedOwner = currentPlayer;
+        hintedRow = chosen.getRow();
+        hintedCol = chosen.getCol();
+
+        TileButton btn = buttons[hintedOwner][hintedRow][hintedCol];
+        if (btn != null) {
+            btn.setHint(true);
+        }
+
+        // consume 1 hint only after success
+        hintsLeft--;
+        updateHintLabel();
+
+        // auto-clear after 1.2 seconds
+        hintTimer = new javax.swing.Timer(1200, e -> clearHint());
+        hintTimer.setRepeats(false);
+        hintTimer.start();
+    }
+
 
     private Image loadAndScale(String path) {
         return new ImageIcon(fixPath(path)).getImage()
@@ -990,7 +1111,6 @@ public class MineSweeperPrototype extends JFrame {
             case MEDIUM -> 1;
             case HARD -> 2;
         };
-       
 
         // ❌ IMPORTANT:
         // Do NOT save this as "default difficulty", otherwise it overrides SettingsFrame choice.
@@ -1006,9 +1126,16 @@ public class MineSweeperPrototype extends JFrame {
         revealedCount[0] = revealedCount[1] = 0;
         gameInProgress = true;
 
+        // ✅ reset hint system BEFORE rebuilding the game UI
+        clearHint();
+        hintsLeft = MAX_HINTS;
+
         root.remove(gamePanel);
         gamePanel = buildGame(rows, cols);
         root.add(wrapWithSlideFade(gamePanel), SCREEN_GAME);
+
+        // ✅ now hintLabel exists (created inside buildGame)
+        updateHintLabel();
 
         sharedPoints = 0;
         updateSharedScoreLabel();
@@ -1020,6 +1147,7 @@ public class MineSweeperPrototype extends JFrame {
 
         cards.show(root, SCREEN_GAME);
     }
+
 
 
     /* ------------------------------ BOARD SKINS ------------------------------ */
@@ -1224,12 +1352,30 @@ public class MineSweeperPrototype extends JFrame {
         // add boards to frosted card
         glassBoard.add(boardsPanel, BorderLayout.CENTER);
 
-        // 🔄 Restart icon (centered above boards)
+     // 🔄 Restart icon + 💡 Hint (above boards)
         JButton restartBtn = createRestartIconButton();
 
-        JPanel restartHolder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 8));
+        ThemePalette pal = ThemePalette.of(SysData.getTheme());
+
+        JButton hintBtn = createFrostedButton(safeT("btn.hint", "Hint"), pal);
+        hintBtn.setPreferredSize(new Dimension(140, 45));
+
+        hintLabel = new JLabel();
+        hintLabel.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
+        hintLabel.setForeground(new Color(210, 255, 235));
+        updateHintLabel();
+
+        hintBtn.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            useHint();
+        });
+
+        JPanel restartHolder = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 8));
         restartHolder.setOpaque(false);
+        restartHolder.add(hintBtn);
+        restartHolder.add(hintLabel);
         restartHolder.add(restartBtn);
+
 
         // combine restart + board
         JPanel centerStack = new JPanel(new BorderLayout());
@@ -1401,6 +1547,8 @@ public class MineSweeperPrototype extends JFrame {
         private float revealAlpha = 0f;   // fade animation %
         private boolean fading = false;
         private java.util.List<Point> snowOnTile = new java.util.ArrayList<>();
+        private boolean hint = false;
+
 
 
         TileButton(int size) {
@@ -1457,6 +1605,10 @@ public class MineSweeperPrototype extends JFrame {
                 revealedVisual = r;
             }
         }
+        void setHint(boolean v) {
+            hint = v;
+            repaint();
+        }
 
 
         boolean isRevealedVisual() {
@@ -1492,6 +1644,12 @@ public class MineSweeperPrototype extends JFrame {
                         getHeight(),
                         this
                     );
+                }
+                if (hint) {
+                    g2.setComposite(AlphaComposite.SrcOver);
+                    g2.setStroke(new BasicStroke(4f));
+                    g2.setColor(new Color(255, 215, 0, 200));
+                    g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 10, 10);
                 }
 
                 g2.dispose();
@@ -1548,55 +1706,75 @@ public class MineSweeperPrototype extends JFrame {
     /* ------------------------------ HEADER BAR / SCORE / LIVES ------------------------------ */
 
     private JPanel headerBarForGame() {
+
+        ThemePalette pal = ThemePalette.of(SysData.getTheme());
+
         JPanel bar = new JPanel() {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                Color top = withAlpha(pal.primary.darker(), 235);
+                Color bottom = withAlpha(pal.primary, 220);
+
                 GradientPaint gp = new GradientPaint(
-                        0, 0, WOOD_DARK,
-                        0, getHeight(), WOOD
+                        0, 0, top,
+                        0, getHeight(), bottom
                 );
                 g2.setPaint(gp);
                 g2.fillRect(0, 0, getWidth(), getHeight());
+
+                // subtle border line
+                g2.setColor(withAlpha(pal.stroke, 180));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawLine(0, getHeight() - 2, getWidth(), getHeight() - 2);
             }
         };
+
         bar.setLayout(new FlowLayout(FlowLayout.LEFT, 24, 10));
         bar.setPreferredSize(new Dimension(0, 60));
         bar.setOpaque(false);
 
-        turnLabel.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 16));
-        turnLabel.setForeground(MOSS_GLOW);
+        boolean he = (SysData.getI18n()!=null && SysData.getI18n().isHebrew());
+        Font fTurn  = new Font(he ? "SansSerif" : "Georgia", Font.BOLD, 16);
+        Font fSmall = new Font(he ? "SansSerif" : "Georgia", Font.BOLD, 14);
 
-        sharedScoreLabel.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
-        sharedScoreLabel.setForeground(TEXT_PRIMARY);
+        turnLabel.setFont(fTurn);
+        turnLabel.setForeground(pal.text);
+
+        sharedScoreLabel.setFont(fSmall);
+        sharedScoreLabel.setForeground(pal.text);
         updateSharedScoreLabel();
 
-        JButton help = woodButton(safeT("btn.help","Help"));
-        JButton menu = woodButton(safeT("btn.mainMenu","Main Menu"));
-        JButton historyBtn = woodButton(safeT("btn.history",safeT("menu.history", "History")));
-        historyBtn.setPreferredSize(new Dimension(110, 34));
-        historyBtn.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	showHistory();});
+        JButton help = createFrostedButton(safeT("btn.help","Help"), pal);
+        JButton menu = createFrostedButton(safeT("btn.mainMenu","Main Menu"), pal);
+        JButton historyBtn = createFrostedButton(safeT("btn.history",safeT("menu.history", "History")), pal);
 
-        help.setPreferredSize(new Dimension(90, 34));
-        menu.setPreferredSize(new Dimension(90, 34));
+        help.setPreferredSize(new Dimension(110, 38));
+        menu.setPreferredSize(new Dimension(130, 38));
+        historyBtn.setPreferredSize(new Dimension(120, 38));
 
         help.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	showHelp();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            showHelp();
+        });
         menu.addActionListener(e -> {
-        	SoundManager.play(SoundManager.Sfx.CLICK);
-        	showMenu();});
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            showMenu();
+        });
+        historyBtn.addActionListener(e -> {
+            SoundManager.play(SoundManager.Sfx.CLICK);
+            showHistory();
+        });
 
         JLabel scoreTitle = new JLabel(safeT("lbl.score","Score:"));
-        scoreTitle.setForeground(TEXT_PRIMARY);
-        scoreTitle.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
+        scoreTitle.setForeground(pal.text);
+        scoreTitle.setFont(fSmall);
 
         JLabel livesLbl = new JLabel(safeT("lbl.lives","Lives:"));
-        livesLbl.setForeground(TEXT_PRIMARY);
-        livesLbl.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
+        livesLbl.setForeground(pal.text);
+        livesLbl.setFont(fSmall);
 
         JPanel sharedBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         sharedBar.setOpaque(false);
@@ -1615,19 +1793,20 @@ public class MineSweeperPrototype extends JFrame {
         bar.add(space(24));
         bar.add(livesLbl);
         bar.add(sharedBar);
-        bar.add(space(24));
+        bar.add(space(18));
         bar.add(help);
         bar.add(menu);
         bar.add(historyBtn);
-        bar.add(space(24));
+        bar.add(space(18));
 
-        rightStats.setFont(new Font((SysData.getI18n()!=null && SysData.getI18n().isHebrew()) ? "SansSerif" : "Georgia", Font.BOLD, 14));
-        rightStats.setForeground(TEXT_PRIMARY);
+        rightStats.setFont(fSmall);
+        rightStats.setForeground(pal.text);
         refreshRightStats();
         bar.add(rightStats);
 
         return bar;
     }
+
 
     private void refreshRightStats() {
         int idx = p1Turn ? 0 : 1;
@@ -2498,9 +2677,14 @@ public class MineSweeperPrototype extends JFrame {
         updateSharedHearts();
         refreshRightStats();
 
+        // ✅ reset hint system for the restarted game
+        clearHint();
+        hintsLeft = MAX_HINTS;
+
         // IMPORTANT: reuse your existing init logic so listeners work
         startGame();
     }
+
 
 
 

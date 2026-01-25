@@ -13,6 +13,7 @@ public class TileButton extends JButton {
 	        private float revealAlpha = 0f;   // fade animation %
 	        private boolean fading = false;
 	        private java.util.List<Point> snowOnTile = new java.util.ArrayList<>();
+	        
 	
 	
 	        TileButton(int size) {
