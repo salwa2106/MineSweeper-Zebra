@@ -99,6 +99,10 @@ public class MineSweeperPrototype extends JFrame {
             return rel;
         }
     }
+ // ===== TURN TIMER =====
+    private int turnSecondsLeft = 30;
+    private javax.swing.Timer turnTimer;
+    private final JLabel timerLabel = new JLabel();
 
 
 
@@ -663,6 +667,55 @@ public class MineSweeperPrototype extends JFrame {
         return container;
     }
 
+    private void updateTimerLabel() {
+        if (!SysData.isTurnTimerEnabled()) {
+            timerLabel.setText(safeT("status.timeOff", "Time: OFF"));
+            return;
+        }
+        timerLabel.setText(safeT("status.timeLeft", "Time: ") + turnSecondsLeft + "s");
+    }
+
+    private void stopTurnTimer() {
+        if (turnTimer != null) {
+            turnTimer.stop();
+            turnTimer = null;
+        }
+    }
+
+    private void startTurnTimer() {
+        stopTurnTimer();
+
+        // ✅ אם מכובה בהגדרות — לא מפעילים בכלל
+        if (!SysData.isTurnTimerEnabled()) {
+            updateTimerLabel();
+            return;
+        }
+
+        turnSecondsLeft = SysData.getTurnSecondsPerTurn(); // ✅ דינמי מה-Settings
+        updateTimerLabel();
+
+        turnTimer = new javax.swing.Timer(1000, e -> {
+            if (!gameInProgress || gameEnded || sharedLives == 0) {
+                stopTurnTimer();
+                return;
+            }
+
+            turnSecondsLeft--;
+            updateTimerLabel();
+
+            if (turnSecondsLeft <= 0) {
+                stopTurnTimer();
+
+                // ✅ בלי JOptionPane (הוא “תוקע” את המשחק ומעצבן)
+                SoundManager.play(SoundManager.Sfx.CLICK);
+
+                toggleTurnLabel(); // זה כבר מפעיל startTurnTimer מחדש אצלך
+            }
+        });
+
+        turnTimer.start();
+    }
+
 
 
     private JPanel buildMenu() {
@@ -794,6 +847,7 @@ public class MineSweeperPrototype extends JFrame {
                 syncDifficultyComboFromSettings();
                 refreshLocalization();
                 applyThemeFromSettings();
+                startTurnTimer(); // ✅ תופס ON/OFF + seconds מיד
             });
             frame.setVisible(true);
         });
@@ -1246,6 +1300,9 @@ public class MineSweeperPrototype extends JFrame {
         refreshRightStats();
 
         cards.show(root, SCREEN_GAME);
+        gameEnded = false;
+        startTurnTimer();
+
     }
 
 
@@ -1856,6 +1913,10 @@ public class MineSweeperPrototype extends JFrame {
 
         turnLabel.setFont(fTurn);
         turnLabel.setForeground(pal.text);
+        timerLabel.setFont(fTurn);
+        timerLabel.setForeground(pal.text);
+        updateTimerLabel();
+
 
         sharedScoreLabel.setFont(fSmall);
         sharedScoreLabel.setForeground(pal.text);
@@ -1902,6 +1963,7 @@ public class MineSweeperPrototype extends JFrame {
 
         bar.add(turnLabel);
         bar.add(space(24));
+        bar.add(timerLabel);
         bar.add(scoreTitle);
         bar.add(sharedScoreLabel);
         bar.add(space(24));
@@ -1948,6 +2010,8 @@ public class MineSweeperPrototype extends JFrame {
         // dimming
         dimPanels[active].setDim(1f);
         dimPanels[inactive].setDim(0.45f);
+        startTurnTimer();
+
     }
 
 
@@ -3266,6 +3330,7 @@ private void endGame(String resultText, String winnerNameOrNull) {
 
   // ✅ prevent double-trigger
   if (gameEnded) return;
+  stopTurnTimer();
 
   gameEnded = true;
   gameInProgress = false;

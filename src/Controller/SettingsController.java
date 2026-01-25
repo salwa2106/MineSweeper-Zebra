@@ -74,4 +74,5 @@ public class SettingsController {
 
     public int getMaxActivations() { return questionSettings.getMaxActivations(); }
     public void setMaxActivations(int v) { questionSettings.setMaxActivations(Math.max(1, v)); }
+    
 }

@@ -17,6 +17,25 @@ public class SysData {
     private static Language language = Language.EN;
     private static l18n i18n = new l18n(language);
     private static float musicVolume = 0.7f; // 70% default (0.0–1.0)
+ // -------------------- TURN TIMER (IN-MEMORY) --------------------
+    private static boolean turnTimerEnabled = true;
+    private static int turnSecondsPerTurn = 30;
+
+    public static boolean isTurnTimerEnabled() {
+        return turnTimerEnabled;
+    }
+
+    public static void setTurnTimerEnabled(boolean enabled) {
+        turnTimerEnabled = enabled;
+    }
+
+    public static int getTurnSecondsPerTurn() {
+        return turnSecondsPerTurn;
+    }
+
+    public static void setTurnSecondsPerTurn(int seconds) {
+        turnSecondsPerTurn = Math.max(5, Math.min(120, seconds));
+    }
 
     public static float getMusicVolume() {
         return musicVolume;

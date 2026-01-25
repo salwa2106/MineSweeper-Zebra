@@ -7,7 +7,25 @@ public class GameSettings {
     private boolean autoSaveHistory = true;
     private Language language = Language.EN;
     private AppTheme theme = AppTheme.DARK;
-    
+    private boolean turnTimerEnabled = true;
+    private int turnSecondsPerPlayer = 30;
+
+    public boolean isTurnTimerEnabled() {
+        return turnTimerEnabled;
+    }
+
+    public void setTurnTimerEnabled(boolean turnTimerEnabled) {
+        this.turnTimerEnabled = turnTimerEnabled;
+    }
+
+    public int getTurnSecondsPerPlayer() {
+        return turnSecondsPerPlayer;
+    }
+
+    public void setTurnSecondsPerPlayer(int turnSecondsPerPlayer) {
+        this.turnSecondsPerPlayer = Math.max(5, Math.min(120, turnSecondsPerPlayer));
+    }
+
 
 
     public boolean isSoundEnabled() { return soundEnabled; }
